@@ -197,7 +197,7 @@ If a `ConfigField` has a specified `type` but the type of the provided `value` i
 ```python
 class NestedFoo(ConfigState):
     license_key: str = ConfigField(type=str, mandatory=True)
-	foo: Foo = ConfigField(type=Foo,
+    foo: Foo = ConfigField(type=Foo,
                            doc='A ConfigState as config field',
                            mandatory=True)
 ```
