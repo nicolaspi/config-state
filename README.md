@@ -12,7 +12,7 @@ The state variables constitute the mutable state of the instance and can be upda
 The configuration and state variables are meant to represent the necessary and sufficient information required to clone the object's instance. They can be used to save and restore the object from disk.
 
  - The configuration fields are defined using `ConfigField` class attributes. They can have typing constraints and be provided with a factory method for building complex types out of simpler/built-in ones.
- - State variables are defined using `StateVar` attributes within the constructor. They can alternatively be defined as class properties using `@statepropercy` if random logic execution is needed upon accession/modification.
+ - State variables are defined using `StateVar` attributes within the constructor. They can alternatively be defined as class properties using `@stateproperty` if random logic execution is needed upon accession/modification.
 
 Implementing a class inheriting from `ConfigState` as parent offers the following benefits:
 - Provides clear semantic separation between the static configuration values and the mutable state variables.
