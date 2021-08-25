@@ -97,10 +97,10 @@ class SubFooWithRef(ConfigState):
   nested_foo: NestedFoo = ConfigField(type=NestedFoo)
   nested_foo2: NestedFoo = ConfigField(type=NestedFoo)
   param_ref = ConfigField(nested_foo.license_key, doc="Reference to "
-                                                      "globalfoo's "
+                                                      "nested_foo's "
                                                       "license id")
   param_ref2 = ConfigField(nested_foo2.license_key, doc="Reference to "
-                                                        "globalfoo's "
+                                                        "nested_foo2's "
                                                         "license id")
   date_ref = ConfigField(nested_foo.date)
 

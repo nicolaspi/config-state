@@ -10,6 +10,7 @@ from config_state import ConfigState
 from config_state import stateproperty
 from config_state import StateVar
 from config_state.config_state import _ReferenceContext
+from config_state.config_state import DeferredConf
 from config_state.exceptions import ConfigError
 from tests.objects import Base
 from tests.objects import Foo
@@ -285,13 +286,25 @@ def test_deferred():
 
   sub3 = Sub3({'param': 'value', 'sub1': {'param': '...'}})
   assert sub3.param == 'value'
-  assert sub3.sub1.param is Ellipsis
+  assert isinstance(sub3.sub1.param, DeferredConf)
 
   sub3.sub1.param = 'updated_value'
   assert sub3.sub1.param == 'updated_value'
 
   with pytest.raises(AttributeError):
     sub3.sub1.param = 'new_updated_value'
+
+  class SubFoo(Foo):
+    license_key = ConfigField(..., "Deferred by default")
+
+  foo = SubFoo()
+  foo.license_key = '1233'
+  assert foo.license_key == '1233'
+
+  foo2 = SubFoo()
+  assert isinstance(foo2.license_key, DeferredConf)
+  foo2.license_key = '4567'
+  assert foo2.license_key == '4567'
 
 
 def test_no_init():
@@ -449,6 +462,21 @@ def test_references_priority():
                                'nested_foo': {'license_key': '54321'},
                                'nested_foo2': {'license_key': '54322'}})
   assert len(_ReferenceContext.updated_refs) == 0
+
+
+def test_deferred_reference():
+  foo = SubFooWithMultiRef2({'licenses_ref': ..., 'dates_ref': ...})
+  foo.licenses_ref = '8765'
+  foo.dates_ref = '2021-05-15 00:00:00'
+
+  assert foo.licenses_ref == foo.nested_foo.license_key
+  assert foo.licenses_ref == foo.nested_foo2.license_key
+  assert foo.licenses_ref == '8765'
+
+  assert foo.dates_ref == foo.nested_foo.date
+  assert foo.dates_ref == foo.nested_foo2.date
+  assert foo.dates_ref == datetime.strptime('2021-05-15 00:00:00',
+                                            '%Y-%m-%d %H:%M:%S')
 
 
 def test_save_load_cycle(tmpdir):

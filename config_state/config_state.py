@@ -82,11 +82,21 @@ class _MetaConfigState(ABCMeta):
     return [item_func(k, v) for k, v in attrs]
 
   @staticmethod
-  def build_get(j, dict_attr: str):
-    def get(_self):
+  def build_get(j, dict_attr: str, is_conf_field=False):
+    def _get(_self):
       return getattr(_self, dict_attr)[j]._value_
 
-    return get
+    def _get_conf(_self):
+      attr = getattr(_self, dict_attr)[j]
+      if isinstance(attr, _DeferredConf):
+        if attr._value_.value is not Ellipsis:
+          # the conf have been updated, we update the field
+          _self._update_conf(j, attr._value_.value)
+          return getattr(_self, j)
+
+      return attr._value_
+
+    return _get if not is_conf_field else _get_conf
 
   @staticmethod
   def build_set(j, dict_attr: str, is_conf_field=False):
@@ -98,6 +108,9 @@ class _MetaConfigState(ABCMeta):
     def _set_conf(_self: ConfigState, value):
       var = getattr(_self, dict_attr)[j]
       if isinstance(var, _DeferredConf):
+        # A DeferredConf stores a mutable reference to allow update of all
+        # potential ConfField that are references to this DeferredConf
+        var._value_.value = value
         _self._update_conf(j, value)
       else:
         raise AttributeError("Updating a conf field is forbidden")
@@ -108,10 +121,25 @@ class _MetaConfigState(ABCMeta):
     # We create and set the properties for the conf.
     for k, v in cls._config_fields_default[cls].items():
       conf_prop = _MetaConfigState.ConfProperty(
-        _MetaConfigState.build_get(k, '_config_fields'),
+        _MetaConfigState.build_get(k, '_config_fields', is_conf_field=True),
         _MetaConfigState.build_set(k, '_config_fields', is_conf_field=True),
         doc=v._doc_, conf_field=v)
       setattr(cls, k, conf_prop)
+
+  def _clone_config_fields_default(cls):
+    copy_config_fields = {}
+    for k, v in cls._config_fields_default[cls].items():
+      if isinstance(v, _DeferredConf):
+        copy_config_fields[k] = ConfigField(copy(v._value_),
+                                            v._doc_,
+                                            type=v._type_,
+                                            force_type=v._force_type_,
+                                            factory=v._factory_,
+                                            mandatory=v._mandatory_)
+      else:
+        copy_config_fields[k] = v
+
+    return copy_config_fields
 
   def __init__(cls, name, bases, attrs):
     """The `ConfigField` and `StateVar` attributes are converted
@@ -162,14 +190,21 @@ class _MetaConfigState(ABCMeta):
                       f"`config` parameter")
 
     @exception_handler
-    def __init__(self, config=None, *args, **kwargs):
+    def __init__(self, config: Optional[Dict] = None, *args, **kwargs):
       if config is not None:
         config = copy(config)
+        # replace Ellipsis with DeferredConf
+        for k, conf_item in config.items():
+          # we containerize the Ellipsis in order to propagate its update to
+          # all its references.
+          if conf_item is Ellipsis or conf_item == '...':
+            config[k] = DeferredConf()
 
       if not hasattr(self, "_config_fields"):
         self._config_fields = {}
         conf_fields_default = self._config_fields_default[type(self)]
-        self._config_fields = copy(conf_fields_default)
+        self._config_fields = _MetaConfigState._clone_config_fields_default(
+          type(self))
 
         # We resolve special case where config fields are MetaConfigState
         with _ReferenceContext(config, _references_conf_fields,
@@ -315,7 +350,7 @@ class ConfigField:
     _type = get_param(2, 'type') or type(value)
     klass = cls
 
-    if value is Ellipsis or '...' == value:
+    if isinstance(value, DeferredConf) or value is Ellipsis or '...' == value:
       klass = _DeferredConf
 
     if isinstance(_type, _MetaConfigState):
@@ -336,8 +371,8 @@ class ConfigField:
     return object.__new__(klass)
 
   def _maybe_create_reference(self):
-    if not isinstance(self._type_, _MetaConfigState) or \
-      isinstance(self._value_, ConfigState):
+    if not isinstance(self._type_, _MetaConfigState) \
+      or isinstance(self._value_, ConfigState):
       # We don't create a reference if the ConfigState is already
       # initialized
       return
@@ -623,10 +658,21 @@ class _DeferredConf(ConfigField):
   """
 
   def __post_init__(self):
+    value = self._value_
     self._value_ = None
     super().__post_init__()
-    self._value_ = Ellipsis
-    self._type_ = type(Ellipsis)
+    if isinstance(value, DeferredConf):
+      self._value_ = value
+    else:
+      self._value_ = DeferredConf()
+    self._type_ = None
+
+
+@dataclass
+class DeferredConf(object):
+  """ Represent a config value that has been initialized with an Ellipsis.
+  """
+  value: Any = Ellipsis
 
 
 class _ReferenceContext(object):
@@ -927,10 +973,8 @@ class ConfigState(metaclass=_MetaConfigState):
         state_var = StateVar(value, prop_type.__doc__)
         return state_var.__getstate__()
 
-    state_vars = _MetaConfigState._get_attr_type(type(self), StateProperty,
-                                                 lambda k, v: (k,
-                                                               export_state_var(
-                                                                 v, k, self)))
+    state_vars = _MetaConfigState._get_attr_type(
+      type(self), StateProperty, lambda k, v: (k, export_state_var(v, k, self)))
     state_vars = dict(state_vars)
     obj_state = ObjectState(type(self), conf_fields, state_vars)
     return obj_state
@@ -1000,14 +1044,16 @@ class ConfigState(metaclass=_MetaConfigState):
 
     def get_nested_config(object: Any):
       if isinstance(object, ConfigState):
-        config = dict([(k, get_nested_config(v._value_)) for k, v in
-                       object._config_fields.items()])
+        config = dict([(k, get_nested_config(getattr(object, k))) for k in
+                       object._config_fields.keys()])
         return config
       else:
         return str(object)
 
     config = get_nested_config(self)
-    return yaml.dump(config, default_flow_style=False)
+    stream = yaml.dump(config, default_flow_style=False)
+
+    return stream.replace("'", '')
 
   def config_hash(self):
     """Compute the a hash representation of the configuration.
