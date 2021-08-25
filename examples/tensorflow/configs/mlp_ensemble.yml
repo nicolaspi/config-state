@@ -1,0 +1,12 @@
+dataset:
+  name: mnist
+  batch_size: 128
+model:
+  class: Ensembler
+  ensemble_size: 4
+  model:
+    class: MultiLayerPerceptron
+    structure: [128]
+optimizer:
+  class: Adam
+  learning_rate: 0.001

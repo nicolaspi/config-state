@@ -1,0 +1,10 @@
+dataset:
+  name: mnist
+  batch_size: 32
+model:
+  class: MultiLayerPerceptron
+  structure: [128]
+  dropout_rate: 0.2
+optimizer:
+  class: RMSprop
+  learning_rate: 0.001
