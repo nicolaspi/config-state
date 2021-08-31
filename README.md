@@ -1,4 +1,5 @@
 # config_state
+![CI Status](https://github.com/nicolaspi/config-state/actions/workflows/ci.yml/badge.svg)
 
 The **python** language is a flexible language often used as an interface to manipulate high performance libraries coded in less flexible native languages like **C/C++**. **ConfigState** is this idea applied on an higher level in the hierarchy, it provides a frame to bridge human-readable *configuration languages* (e.g. **json** or **yaml**) with **python**.
 
