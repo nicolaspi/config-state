@@ -14,14 +14,17 @@ from config_state.serializers.serializer import Serializer
 
 @register
 class Json(Serializer):
-  is_binary: bool = ConfigField(False, "Whether the serializer is binary",
+  is_binary: bool = ConfigField(False,
+                                "Whether the serializer is binary",
                                 static=True)
 
   def __init__(self, config=None):
     super().__init__(config)
 
   def _dump(self, object_state: ObjectState, stream: IO):
+
     def _dict_factory(elements):
+
       def convert(k, v):
         if isinstance(v, type):
           v = '.'.join([v.__module__, v.__name__])

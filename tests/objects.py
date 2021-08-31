@@ -16,10 +16,13 @@ class Foo(ConfigState):
   log_dir = ConfigField("./", "Path to output folder", static=True)
   learning_rate = ConfigField(0.1, "The learning rate", force_type=True)
   class_rates: dict = ConfigField({'cat': 0.5, 'dog': 0.5}, "Class rates")
-  license_key: str = ConfigField(None, "License authorization key",
+  license_key: str = ConfigField(None,
+                                 "License authorization key",
                                  mandatory=True)
-  date: datetime = ConfigField(value='2019-01-01 00:00:00', type=datetime,
-                               doc="some date", factory=date_factory)
+  date: datetime = ConfigField(value='2019-01-01 00:00:00',
+                               type=datetime,
+                               doc="some date",
+                               factory=date_factory)
   path: Path = ConfigField(value="./", type=Path, doc="path param")
 
   def __init__(self, config=None):
@@ -38,7 +41,8 @@ class Foo(ConfigState):
 
 
 class SubFoo(Foo):
-  learning_rate = ConfigField(0.5, "Overrides the base class config",
+  learning_rate = ConfigField(0.5,
+                              "Overrides the base class config",
                               force_type=True)
   use_dropout = ConfigField(True, force_type=True)
   none_field = ConfigField(None, "None field")
@@ -77,6 +81,7 @@ class Base(ConfigState):
 
 
 class Sub1(Base):
+
   def __init__(self, config=None):
     super().__init__(config)
 
@@ -89,6 +94,7 @@ class Sub2(Base):
 
 
 class Sub3(Sub2):
+
   def __init__(self, config=None):
     super().__init__(config)
 
@@ -96,12 +102,14 @@ class Sub3(Sub2):
 class SubFooWithRef(ConfigState):
   nested_foo: NestedFoo = ConfigField(type=NestedFoo)
   nested_foo2: NestedFoo = ConfigField(type=NestedFoo)
-  param_ref = ConfigField(nested_foo.license_key, doc="Reference to "
-                                                      "nested_foo's "
-                                                      "license id")
-  param_ref2 = ConfigField(nested_foo2.license_key, doc="Reference to "
-                                                        "nested_foo2's "
-                                                        "license id")
+  param_ref = ConfigField(nested_foo.license_key,
+                          doc="Reference to "
+                          "nested_foo's "
+                          "license id")
+  param_ref2 = ConfigField(nested_foo2.license_key,
+                           doc="Reference to "
+                           "nested_foo2's "
+                           "license id")
   date_ref = ConfigField(nested_foo.date)
 
   def __init__(self, config):
@@ -128,23 +136,26 @@ class SubFooWithMultiRef(ConfigState):
 
 class SubFooWithAliasRef(SubFooWithRef):
   alias_param_ref = reference(
-    ['nested_foo.license_key', 'nested_foo2.license_key'])
+      ['nested_foo.license_key', 'nested_foo2.license_key'])
   alias_date_ref = reference('date_ref')
 
 
 class SubFooWithAliasRef2(SubFooWithRef):
   alias_date_ref = ConfigField(SubFooWithRef.date_ref)
-  alias_param_ref = ConfigField([SubFooWithRef.nested_foo.license_key,
-                                 SubFooWithRef.nested_foo2.license_key])
+  alias_param_ref = ConfigField([
+      SubFooWithRef.nested_foo.license_key,
+      SubFooWithRef.nested_foo2.license_key
+  ])
   alias_of_alias = ConfigField(alias_date_ref)
 
 
 class SubFooWithMultiRef2(SubFooWithRef):
-  dates_ref = ConfigField(
-    [SubFooWithRef.nested_foo.date, SubFooWithRef.nested_foo2.date,
-     SubFooWithRef.date_ref])
+  dates_ref = ConfigField([
+      SubFooWithRef.nested_foo.date, SubFooWithRef.nested_foo2.date,
+      SubFooWithRef.date_ref
+  ])
   licenses_ref = ConfigField(
-    [SubFooWithRef.param_ref, SubFooWithRef.param_ref2])
+      [SubFooWithRef.param_ref, SubFooWithRef.param_ref2])
 
 
 class FooWithConfStateRef(ConfigState):
@@ -152,14 +163,14 @@ class FooWithConfStateRef(ConfigState):
   nested_foo_ref = ConfigField(sub_foo.nested_foo)
   nested_foo_ref2 = ConfigField(sub_foo.nested_foo2)
   license_key = ConfigField(
-    [sub_foo.nested_foo.license_key, sub_foo.nested_foo2.license_key])
+      [sub_foo.nested_foo.license_key, sub_foo.nested_foo2.license_key])
 
 
 class FooWithMultiConfStateRef(ConfigState):
   sub_foo: SubFooWithRef = ConfigField(type=SubFooWithRef)
   nested_foo_ref = ConfigField([sub_foo.nested_foo, sub_foo.nested_foo2])
   license_key = ConfigField(
-    [sub_foo.nested_foo.license_key, sub_foo.nested_foo2.license_key])
+      [sub_foo.nested_foo.license_key, sub_foo.nested_foo2.license_key])
 
   def __init__(self, config=None):
     super().__init__(config=config)

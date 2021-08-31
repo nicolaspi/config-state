@@ -39,6 +39,7 @@ class _MetaConfigState(ABCMeta):
   """
 
   class ConfProperty(property):
+
     def __new__(cls, *args, **kwargs):
       conf_field = kwargs.get('conf_field', None)
       if conf_field is not None \
@@ -47,6 +48,7 @@ class _MetaConfigState(ABCMeta):
         and not isinstance(conf_field._value_, ConfigState):
 
         class TaintedConfProperty(cls):
+
           def __init__(self, *args, conf_field, **kwargs):
             super().__init__(*args, conf_field=conf_field, **kwargs)
             self.make_refs(conf_field)
@@ -83,6 +85,7 @@ class _MetaConfigState(ABCMeta):
 
   @staticmethod
   def build_get(j, dict_attr: str, is_conf_field=False):
+
     def _get(_self):
       return getattr(_self, dict_attr)[j]._value_
 
@@ -100,6 +103,7 @@ class _MetaConfigState(ABCMeta):
 
   @staticmethod
   def build_set(j, dict_attr: str, is_conf_field=False):
+
     def _set(_self, value):
       var = getattr(_self, dict_attr)[j]
       var._value_ = value
@@ -121,9 +125,10 @@ class _MetaConfigState(ABCMeta):
     # We create and set the properties for the conf.
     for k, v in cls._config_fields_default[cls].items():
       conf_prop = _MetaConfigState.ConfProperty(
-        _MetaConfigState.build_get(k, '_config_fields', is_conf_field=True),
-        _MetaConfigState.build_set(k, '_config_fields', is_conf_field=True),
-        doc=v._doc_, conf_field=v)
+          _MetaConfigState.build_get(k, '_config_fields', is_conf_field=True),
+          _MetaConfigState.build_set(k, '_config_fields', is_conf_field=True),
+          doc=v._doc_,
+          conf_field=v)
       setattr(cls, k, conf_prop)
 
   def _clone_config_fields_default(cls):
@@ -152,13 +157,16 @@ class _MetaConfigState(ABCMeta):
     conf_fields_default = {}
     for base in bases:
       conf_fields_default.update(cls._config_fields_default.get(base, {}))
-    conf_fields_default.update(dict(
-      [(k, v) for k, v in cls.__dict__.items() if isinstance(v, ConfigField)]))
+    conf_fields_default.update(
+        dict([(k, v)
+              for k, v in cls.__dict__.items()
+              if isinstance(v, ConfigField)]))
     cls._config_fields_default[cls] = conf_fields_default
 
     _references_conf_fields = {}
-    conf_fields_ids_to_key = dict(
-      [(id(v), k) for k, v in conf_fields_default.items()])
+    conf_fields_ids_to_key = dict([
+        (id(v), k) for k, v in conf_fields_default.items()
+    ])
     for k, v in conf_fields_default.items():
       if isinstance(v, RefConfigField):
         v._maybe_complete_path(conf_fields_ids_to_key)
@@ -175,8 +183,9 @@ class _MetaConfigState(ABCMeta):
 
     # resolve __init__:
     if "__init__" not in cls.__dict__:
-      qual_bases = [base for base in bases if
-                    isinstance(base, _MetaConfigState)]
+      qual_bases = [
+          base for base in bases if isinstance(base, _MetaConfigState)
+      ]
 
       def __core_init__(self, config=None):
         for base in qual_bases:
@@ -204,7 +213,7 @@ class _MetaConfigState(ABCMeta):
         self._config_fields = {}
         conf_fields_default = self._config_fields_default[type(self)]
         self._config_fields = _MetaConfigState._clone_config_fields_default(
-          type(self))
+            type(self))
 
         # We resolve special case where config fields are MetaConfigState
         with _ReferenceContext(config, _references_conf_fields,
@@ -235,7 +244,9 @@ class _MetaConfigState(ABCMeta):
                 if not exist:
                   value = ref_context.build_type(conf, v)
 
-              resolved_conf_field = ConfigField(value, v._doc_, type=v._type_,
+              resolved_conf_field = ConfigField(value,
+                                                v._doc_,
+                                                type=v._type_,
                                                 static=v._static_,
                                                 mandatory=v._mandatory_)
               self._config_fields[k] = resolved_conf_field
@@ -245,13 +256,14 @@ class _MetaConfigState(ABCMeta):
 
         self._state_vars = getattr(self, "_state_vars", {})
         self._state_vars.update(
-          dict(_MetaConfigState._get_attr_type(self, StateVar)))
+            dict(_MetaConfigState._get_attr_type(self, StateVar)))
         # Build and initialize StateVar properties
         for k, v in self._state_vars.items():
           if not hasattr(cls, k):
             state_var_prop = _MetaConfigState.StateProperty(
-              _MetaConfigState.build_get(k, '_state_vars'),
-              _MetaConfigState.build_set(k, '_state_vars'), doc=v._doc_)
+                _MetaConfigState.build_get(k, '_state_vars'),
+                _MetaConfigState.build_set(k, '_state_vars'),
+                doc=v._doc_)
             setattr(cls, k, state_var_prop)
           else:
             if isinstance(v._value_, StateVar):
@@ -262,9 +274,11 @@ class _MetaConfigState(ABCMeta):
         # StateVar properties are already initialized, they need to
         # be reprocessed as they have been unmangled in the `init`
         self._state_vars = getattr(self, "_state_vars", {})
-        self._state_vars.update(dict(
-          _MetaConfigState._get_attr_type(cls, _MetaConfigState.StateProperty,
-                                          lambda j, _: (j, StateVar()))))
+        self._state_vars.update(
+            dict(
+                _MetaConfigState._get_attr_type(cls,
+                                                _MetaConfigState.StateProperty,
+                                                lambda j, _: (j, StateVar()))))
         __core_init__(self, config=config, *args, **kwargs)
         for k, v in self._state_vars.items():
           if isinstance(v._value_, StateVar):
@@ -298,9 +312,14 @@ class ConfigField:
       configuration and the default `value` should be `None`
   """
 
-  def __init__(self, value: Any = None, doc: str = '', type: type = None,
-               force_type: bool = False, static: bool = False,
-               mandatory: bool = False, factory: Callable = None):
+  def __init__(self,
+               value: Any = None,
+               doc: str = '',
+               type: type = None,
+               force_type: bool = False,
+               static: bool = False,
+               mandatory: bool = False,
+               factory: Callable = None):
     self._value_ = value
     self._doc_ = doc
     self._type_ = type
@@ -318,9 +337,10 @@ class ConfigField:
     if self._type_ is not None and not isinstance(self._type_, type):
       raise AttributeError(f"{type(self._type_).__name__} is not a `type`")
 
-    if not isinstance(self._type_,
-                      _MetaConfigState) and self._value_ is not None and not isinstance(
-      self._value_, self._type_):
+    if not isinstance(
+        self._type_,
+        _MetaConfigState) and self._value_ is not None and not isinstance(
+            self._value_, self._type_):
       try:
         if self._factory_ is not None:
           value = self._factory_(self._value_)
@@ -354,6 +374,7 @@ class ConfigField:
       klass = _DeferredConf
 
     if isinstance(_type, _MetaConfigState):
+
       class TaintedConfigField(klass):
         pass
 
@@ -363,9 +384,10 @@ class ConfigField:
                     (_Ref, RefConfigField, _MetaConfigState.ConfProperty)):
       klass = RefConfigField
     elif isinstance(value, (list, tuple)):
-      if value and all(
-          [isinstance(e, (_Ref, RefConfigField, _MetaConfigState.ConfProperty))
-           for e in value]):
+      if value and all([
+          isinstance(e, (_Ref, RefConfigField, _MetaConfigState.ConfProperty))
+          for e in value
+      ]):
         klass = RefConfigField
 
     return object.__new__(klass)
@@ -381,6 +403,7 @@ class ConfigField:
     default_conf = self._type_._config_fields_default[self._type_]
 
     def build_fget(id, key, ref):
+
       def _get_attr(_):
         DynamicRef.maybe_save_path()
         DynamicRef.maybe_start_new_path(id, key, ref.ref)
@@ -389,12 +412,17 @@ class ConfigField:
       return _get_attr
 
     def make_class(key):
+
       class TaintedDynamicRef(DynamicRef):
+
         def __init__(self, ref: ConfigField):
           super().__init__(ref)
           DynamicRef._should_save_paths_and_start_new_paths = False
-          [self._set_prop(k) for k in dir(ref) if
-           isinstance(getattr(ref, k), DynamicRef)]
+          [
+              self._set_prop(k)
+              for k in dir(ref)
+              if isinstance(getattr(ref, k), DynamicRef)
+          ]
           DynamicRef._should_save_paths_and_start_new_paths = True
 
       TaintedDynamicRef.__name__ = f"{DynamicRef.__name__}({key})"
@@ -407,7 +435,7 @@ class ConfigField:
 
   def __getstate__(self):
     _type = None if self._type_ is None else '.'.join(
-      [self._type_.__module__, self._type_.__name__])
+        [self._type_.__module__, self._type_.__name__])
     return FrozenPortableField(self._value_, self._doc_, _type)
 
   def __setstate__(self, state):
@@ -417,19 +445,20 @@ class ConfigField:
 
 @dataclass(frozen=True)
 class FrozenPortableField:
-  value: Any = None,
+  value: Any = None
   doc: str = ''
   type: str = None
 
 
 @dataclass
 class PortableField:
-  value: Any = None,
+  value: Any = None
   doc: str = ''
   type: str = None
 
 
 class _Ref:
+
   def __init__(self, ref: ConfigField):
     assert isinstance(ref, ConfigField)
     self.ref = ref
@@ -438,6 +467,7 @@ class _Ref:
 
 
 class StaticRef(_Ref):
+
   def __init__(self, ref, path, path_id):
     super().__init__(ref)
     self.static_path = path
@@ -591,7 +621,7 @@ class RefConfigField(ConfigField):
 
     factory = unmangled_refs[0].ref._factory_
     is_all_ref_same_factory = all(
-      [e.ref._factory_ is factory for e in unmangled_refs])
+        [e.ref._factory_ is factory for e in unmangled_refs])
 
     if not is_all_ref_same_factory:
       raise TypeError(f"Refs should have the same factory")
@@ -685,8 +715,8 @@ class _ReferenceContext(object):
   def __init__(self, config: Optional[dict], references: Dict,
                config_state: 'ConfigState'):
     self._config = config
-    self._default_config = config_state._config_fields_default[
-      type(config_state)]
+    self._default_config = config_state._config_fields_default[type(
+        config_state)]
     self._references = {}
     self._config_state = config_state
     if _ReferenceContext.references_context:
@@ -781,8 +811,9 @@ class _ReferenceContext(object):
       refs = _ReferenceContext.references_context[-1].get(_id, {})
       _ReferenceContext.references_context.append(refs)
 
-      fields = dict(
-        [(id(v), k) for k, v in type._config_fields_default[type].items()])
+      fields = dict([
+          (id(v), k) for k, v in type._config_fields_default[type].items()
+      ])
 
       for _id, references in refs.items():
         if _id in fields and 'conf' in references:
@@ -826,7 +857,7 @@ class StateVar:
 
   def __getstate__(self):
     _type = None if self._type_ is None else '.'.join(
-      [self._type_.__module__, self._type_.__name__])
+        [self._type_.__module__, self._type_.__name__])
     return PortableField(self._value_, self._doc_, _type)
 
   def __setstate__(self, state):
@@ -911,7 +942,7 @@ class ConfigState(metaclass=_MetaConfigState):
         self._update_conf(k, v)
       else:
         raise AttributeError(
-          f"Trying to update the conf field '{k}' which has not been defined")
+            f"Trying to update the conf field '{k}' which has not been defined")
 
     if mandatory_fields:
       raise AttributeError(f"Those "
@@ -934,7 +965,9 @@ class ConfigState(metaclass=_MetaConfigState):
     else:
       _type = attr._type_
 
-    self._config_fields[key] = ConfigField(value, attr._doc_, type=_type,
+    self._config_fields[key] = ConfigField(value,
+                                           attr._doc_,
+                                           type=_type,
                                            force_type=attr._force_type_,
                                            factory=attr._factory_)
 
@@ -961,9 +994,9 @@ class ConfigState(metaclass=_MetaConfigState):
 
   def __getstate__(self) -> ObjectState:
     self.check_validity()
-    conf_fields = dict(
-      [(k, v.__getstate__()) for k, v in self._config_fields.items() if
-       not v._static_])
+    conf_fields = dict([(k, v.__getstate__())
+                        for k, v in self._config_fields.items()
+                        if not v._static_])
 
     def export_state_var(prop_type, key, object):
       if isinstance(prop_type, _MetaConfigState.StateProperty):
@@ -974,7 +1007,8 @@ class ConfigState(metaclass=_MetaConfigState):
         return state_var.__getstate__()
 
     state_vars = _MetaConfigState._get_attr_type(
-      type(self), StateProperty, lambda k, v: (k, export_state_var(v, k, self)))
+        type(self), StateProperty, lambda k, v:
+        (k, export_state_var(v, k, self)))
     state_vars = dict(state_vars)
     obj_state = ObjectState(type(self), conf_fields, state_vars)
     return obj_state
@@ -988,8 +1022,8 @@ class ConfigState(metaclass=_MetaConfigState):
     self.check_validity()
     if not isinstance(self, state.type):
       raise TypeError(
-        f"Error setting state of type {state.type} to instance of "
-        f"type {type(self)}")
+          f"Error setting state of type {state.type} to instance of "
+          f"type {type(self)}")
     if self.__VERSION__ != state.version:
       raise TypeError(f"ConfigState version mismatch {self.__VERSION__} != "
                       f"{state.version}")
@@ -1017,21 +1051,21 @@ class ConfigState(metaclass=_MetaConfigState):
     """
     valid_config_keys = set(self._config_fields.keys())
     all_config_keys = set(
-      _MetaConfigState._get_attr_type(self, ConfigField, lambda k, _: k))
+        _MetaConfigState._get_attr_type(self, ConfigField, lambda k, _: k))
     diff_keys = all_config_keys - valid_config_keys
     if diff_keys:
       raise SyntaxError(
-        f"`{self}` has config fields {diff_keys} that haven't been "
-        f"defined as class attributes.")
+          f"`{self}` has config fields {diff_keys} that haven't been "
+          f"defined as class attributes.")
 
     valid_vars_keys = set(self._state_vars.keys())
     all_vars_keys = set(
-      _MetaConfigState._get_attr_type(self, StateVar, lambda k, _: k))
+        _MetaConfigState._get_attr_type(self, StateVar, lambda k, _: k))
     diff_keys = all_vars_keys - valid_vars_keys
     if diff_keys:
       raise SyntaxError(
-        f"`{self}` has state variables {diff_keys} that have been "
-        f"defined outside its `__init__`.")
+          f"`{self}` has state variables {diff_keys} that have been "
+          f"defined outside its `__init__`.")
 
   def config_summary(self):
     """Returns a string representing the configuration values of the instance.
@@ -1044,8 +1078,8 @@ class ConfigState(metaclass=_MetaConfigState):
 
     def get_nested_config(object: Any):
       if isinstance(object, ConfigState):
-        config = dict([(k, get_nested_config(getattr(object, k))) for k in
-                       object._config_fields.keys()])
+        config = dict([(k, get_nested_config(getattr(object, k)))
+                       for k in object._config_fields.keys()])
         return config
       else:
         return str(object)

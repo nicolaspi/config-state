@@ -12,6 +12,7 @@ from config_state.buildable import register
 
 @builder
 class MasterFoo(ConfigState):
+
   def __init__(self, config):
     super().__init__(config)
 
@@ -62,6 +63,7 @@ class SubFoo3(SubFoo2):
 @builder
 @register
 class SubFoobuilder(Foo):
+
   def method(self):
     pass
 
@@ -124,8 +126,14 @@ def test_builder():
 
 
 def test_nested_foo():
-  config = {'class': 'SubFoo5',
-            'sub_foo': {'class': 'SubFoo3', 'param3': 3, 'param1': 3}}
+  config = {
+      'class': 'SubFoo5',
+      'sub_foo': {
+          'class': 'SubFoo3',
+          'param3': 3,
+          'param1': 3
+      }
+  }
   foo = SubFoobuilder(config)
   assert isinstance(foo.sub_foo, SubFoo3)
   assert foo.sub_foo.param3 == 3
@@ -133,8 +141,14 @@ def test_nested_foo():
 
 
 def test_nested_foo_pickle(tmpdir):
-  config = {'class': 'SubFoo5',
-            'sub_foo': {'class': 'SubFoo3', 'param3': 3, 'param1': 3}}
+  config = {
+      'class': 'SubFoo5',
+      'sub_foo': {
+          'class': 'SubFoo3',
+          'param3': 3,
+          'param1': 3
+      }
+  }
   foo = SubFoobuilder(config)
 
   # 2. Save
@@ -152,8 +166,14 @@ def test_nested_foo_pickle(tmpdir):
 
 
 def test_master_builder():
-  config = {'class': 'Foo.SubFoobuilder.SubFoo5',
-            'sub_foo': {'class': 'SubFoo3', 'param3': 3, 'param1': 3}}
+  config = {
+      'class': 'Foo.SubFoobuilder.SubFoo5',
+      'sub_foo': {
+          'class': 'SubFoo3',
+          'param3': 3,
+          'param1': 3
+      }
+  }
 
   foo = MasterFoo(config)
   assert isinstance(foo, SubFoo5)

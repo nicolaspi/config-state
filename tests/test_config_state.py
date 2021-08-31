@@ -58,24 +58,30 @@ def test_config_consistency():
 
   # stateproperty without setter
   with pytest.raises(TypeError):
+
     class BadFoo(ConfigState):
+
       @stateproperty
       def param(self):
         return None
 
 
 def test_consistency():
+
   class BadConfig(ConfigState):
+
     def __init__(self, config=None):
       super().__init__(config=config)
-      self.invalid_field = ConfigField(None, "ConfigFields should be class "
-                                             "attributes")
+      self.invalid_field = ConfigField(
+          None, "ConfigFields should be class "
+          "attributes")
 
   badconfig = BadConfig()
   with pytest.raises(SyntaxError):
     badconfig.check_validity()
 
   class BadStateVar(ConfigState):
+
     def not_the_init_method(self):
       self.invalid_var = StateVar(None,
                                   "StateVars should be declared in `__init__`")
@@ -87,6 +93,7 @@ def test_consistency():
 
   # type of ConfigField should be a `type`
   with pytest.raises(AttributeError):
+
     class BadFoo3(ConfigState):
       param = ConfigField(type=Foo({'license_key': 123}),
                           doc="type should be a `type`")
@@ -94,16 +101,26 @@ def test_consistency():
 
 def test_nested_config_state():
   foo = NestedFoo2(
-    config={'sub_foo': {'learning_rate': 0.123, 'license_key': '4321'},
-            'license_key': '2134'})
+      config={
+          'sub_foo': {
+              'learning_rate': 0.123,
+              'license_key': '4321'
+          },
+          'license_key': '2134'
+      })
   assert isinstance(foo.sub_foo, SubFoo)
   assert foo.sub_foo.learning_rate == 0.123
   assert foo.sub_foo.license_key == '4321'
   assert foo.license_key == '2134'
 
   foo = NestedFoo2(
-    config={'sub_foo': SubFoo({'learning_rate': 0.123, 'license_key': '4321'}),
-            'license_key': '2134'})
+      config={
+          'sub_foo': SubFoo({
+              'learning_rate': 0.123,
+              'license_key': '4321'
+          }),
+          'license_key': '2134'
+      })
 
   assert isinstance(foo.sub_foo, SubFoo)
   assert foo.sub_foo.learning_rate == 0.123
@@ -112,18 +129,24 @@ def test_nested_config_state():
 
 
 def test_nested_with_default_value():
+
   class NestedFooWithDefaultValue(Foo):
-    sub_foo: SubFoo = ConfigField(value={'license_key': 0}, type=SubFoo,
+    sub_foo: SubFoo = ConfigField(value={'license_key': 0},
+                                  type=SubFoo,
                                   doc="A ConfigState as config field with a "
-                                      "default license value")
+                                  "default license value")
 
   foo = NestedFooWithDefaultValue({'license_key': '2134'})
 
   assert foo.sub_foo.license_key == 0
 
-  foo = NestedFooWithDefaultValue(
-    {'sub_foo': SubFoo({'learning_rate': 0.123, 'license_key': '4321'}),
-     'license_key': '2134'})
+  foo = NestedFooWithDefaultValue({
+      'sub_foo': SubFoo({
+          'learning_rate': 0.123,
+          'license_key': '4321'
+      }),
+      'license_key': '2134'
+  })
 
   assert foo.sub_foo.license_key == '4321'
 
@@ -149,6 +172,7 @@ def test_config_update():
 
 
 def test_config_implicit_conversion():
+
   class Foo(ConfigState):
     path: Path = ConfigField(type=Path, doc="path param")
 
@@ -177,11 +201,13 @@ def test_config_implicit_conversion():
 
 
 def test_factory():
+
   def factory(str_date):
     return datetime.strptime(str_date, '%Y-%m-%d %H:%M:%S')
 
   class Foo(ConfigState):
-    date: datetime = ConfigField(type=datetime, doc="some date",
+    date: datetime = ConfigField(type=datetime,
+                                 doc="some date",
                                  factory=factory)
 
   foo = Foo({'date': '2019-01-01 00:00:00'})
@@ -224,6 +250,7 @@ def test_object_state_manip():
 
 
 def test_config_in_init_access():
+
   class SubFoo(Foo):
     license_key = ConfigField('1234')
     alpha_param = ConfigField(0.6)
@@ -308,6 +335,7 @@ def test_deferred():
 
 
 def test_no_init():
+
   class SubNoInit(Base):
     pass
 
@@ -316,11 +344,14 @@ def test_no_init():
 
 
 def test_multi_bases():
+
   class Base0:
+
     def __init__(self, param1=None, param2=None):
       pass
 
   class Sub(Base0, Base):
+
     def __init__(self, param1=None, config=None):
       Base.__init__(self, config=config)
 
@@ -329,11 +360,16 @@ def test_multi_bases():
 
 
 def test_references():
-  foo = SubFooWithRef({'param_ref': 'ref_license', 'param_ref2': 'ref2_license',
-                       'date_ref': '2020-02-02 00:00:00'})
-  foo2 = SubFooWithRef(
-    {'param_ref': 'ref_license2', 'param_ref2': 'ref2_license2',
-     'date_ref': '2021-02-02 00:00:00'})
+  foo = SubFooWithRef({
+      'param_ref': 'ref_license',
+      'param_ref2': 'ref2_license',
+      'date_ref': '2020-02-02 00:00:00'
+  })
+  foo2 = SubFooWithRef({
+      'param_ref': 'ref_license2',
+      'param_ref2': 'ref2_license2',
+      'date_ref': '2021-02-02 00:00:00'
+  })
 
   assert foo.nested_foo.license_key == 'ref_license'
   assert foo.nested_foo2.license_key == 'ref2_license'
@@ -351,8 +387,10 @@ def test_references():
                                                    '%Y-%m-%d %H:%M:%S')
   assert foo2.nested_foo.date is foo2.date_ref
 
-  foo3 = SubFooWithRef(
-    {'param_ref': 'ref_license2', 'param_ref2': 'ref2_license2'})
+  foo3 = SubFooWithRef({
+      'param_ref': 'ref_license2',
+      'param_ref2': 'ref2_license2'
+  })
   assert foo3.nested_foo.date == datetime.strptime('2019-01-01 00:00:00',
                                                    '%Y-%m-%d %H:%M:%S')
   assert foo3.nested_foo.date is foo3.date_ref
@@ -383,8 +421,10 @@ def test_references():
   assert isinstance(foo.ref, list)
   assert len(foo.ref) == 0
 
-  foo = SubFooWithAliasRef(
-    {'alias_param_ref': '12345', 'alias_date_ref': '2021-03-03 00:00:00'})
+  foo = SubFooWithAliasRef({
+      'alias_param_ref': '12345',
+      'alias_date_ref': '2021-03-03 00:00:00'
+  })
 
   assert foo.alias_date_ref == foo.date_ref
   assert foo.alias_date_ref == foo.nested_foo.date
@@ -394,8 +434,10 @@ def test_references():
   assert foo.alias_param_ref == foo.nested_foo.license_key
   assert foo.alias_param_ref == '12345'
 
-  foo = SubFooWithAliasRef2(
-    {'alias_param_ref': '12345', 'alias_date_ref': '2021-03-03 00:00:00'})
+  foo = SubFooWithAliasRef2({
+      'alias_param_ref': '12345',
+      'alias_date_ref': '2021-03-03 00:00:00'
+  })
 
   assert foo.alias_date_ref == foo.date_ref
   assert foo.alias_date_ref == foo.nested_foo.date
@@ -407,8 +449,10 @@ def test_references():
   assert foo.alias_param_ref == foo.nested_foo.license_key
   assert foo.alias_param_ref == '12345'
 
-  foo = SubFooWithMultiRef2(
-    {'licenses_ref': '1234567', 'dates_ref': '2021-04-04 00:00:00'})
+  foo = SubFooWithMultiRef2({
+      'licenses_ref': '1234567',
+      'dates_ref': '2021-04-04 00:00:00'
+  })
 
   assert foo.licenses_ref == foo.nested_foo.license_key
   assert foo.licenses_ref == foo.nested_foo2.license_key
@@ -419,7 +463,9 @@ def test_references():
   assert foo.dates_ref == datetime.strptime('2021-04-04 00:00:00',
                                             '%Y-%m-%d %H:%M:%S')
 
-  foo = FooWithConfStateRef({'license_key': '7890', })
+  foo = FooWithConfStateRef({
+      'license_key': '7890',
+  })
 
   assert foo.sub_foo.nested_foo.license_key == '7890'
   assert foo.sub_foo.nested_foo2.license_key == '7890'
@@ -441,11 +487,15 @@ def test_references():
 
 def test_references_priority():
   # check config antecedence
-  foo = SubFooWithAliasRef2(
-    {'alias_date_ref': '2021-03-03 00:00:00', 'date_ref': '2021-04-04 00:00:00',
-     'param_ref': 'should_be_shadowed',
-     'nested_foo': {'license_key': 'should_be_shadowed2'},
-     'alias_param_ref': '12345'})
+  foo = SubFooWithAliasRef2({
+      'alias_date_ref': '2021-03-03 00:00:00',
+      'date_ref': '2021-04-04 00:00:00',
+      'param_ref': 'should_be_shadowed',
+      'nested_foo': {
+          'license_key': 'should_be_shadowed2'
+      },
+      'alias_param_ref': '12345'
+  })
 
   assert foo.alias_date_ref == foo.date_ref
   assert foo.alias_date_ref == foo.nested_foo.date
@@ -458,9 +508,15 @@ def test_references_priority():
 
   # check config antecedence bis
   with pytest.raises(ConfigError):
-    foo = SubFooWithAliasRef2({'date_ref': '2021-05-05 00:00:00',
-                               'nested_foo': {'license_key': '54321'},
-                               'nested_foo2': {'license_key': '54322'}})
+    foo = SubFooWithAliasRef2({
+        'date_ref': '2021-05-05 00:00:00',
+        'nested_foo': {
+            'license_key': '54321'
+        },
+        'nested_foo2': {
+            'license_key': '54322'
+        }
+    })
   assert len(_ReferenceContext.updated_refs) == 0
 
 
@@ -480,6 +536,7 @@ def test_deferred_reference():
 
 
 def test_save_load_cycle(tmpdir):
+
   class LocalFoo(Foo):
     local_param = ConfigField(1, "local param")
 
@@ -531,12 +588,16 @@ def test_save_load_cycle(tmpdir):
   nested = NestedFoo2({'license_key': 0, 'sub_foo': {'license_key': 0}})
   test_object_pickle(nested)
   test_pickle(
-    SubFooWithRef({'param_ref': 'ref_license', 'param_ref2': 'ref2_license'}),
-    tmpdir)
+      SubFooWithRef({
+          'param_ref': 'ref_license',
+          'param_ref2': 'ref2_license'
+      }), tmpdir)
   test_pickle(SubFooWithRef2({"ref": "ref_param"}), tmpdir)
-  test_pickle(SubFooWithAliasRef(
-    {'alias_param_ref': '12345', 'alias_date_ref': '2021-03-03 00:00:00'}),
-    tmpdir)
+  test_pickle(
+      SubFooWithAliasRef({
+          'alias_param_ref': '12345',
+          'alias_date_ref': '2021-03-03 00:00:00'
+      }), tmpdir)
 
 
 def test_config_hash():

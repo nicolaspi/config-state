@@ -11,7 +11,8 @@ from config_state.buildable import builder
 
 @builder
 class Serializer(ConfigState):
-  is_binary: bool = ConfigField(None, "Whether the serializer is binary",
+  is_binary: bool = ConfigField(None,
+                                "Whether the serializer is binary",
                                 mandatory=True)
 
   def __init__(self, config):

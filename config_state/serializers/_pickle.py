@@ -9,10 +9,11 @@ from config_state.serializers.serializer import Serializer
 
 @register
 class Pickle(Serializer):
-  is_binary: bool = ConfigField(True, "Whether the serializer is binary",
+  is_binary: bool = ConfigField(True,
+                                "Whether the serializer is binary",
                                 static=True)
   protocol_version: int = ConfigField(pickle.HIGHEST_PROTOCOL, "Pickle's "
-                                                               "protocol version")
+                                      "protocol version")
 
   def __init__(self, config=None):
     super().__init__(config)

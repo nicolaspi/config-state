@@ -6,7 +6,9 @@ from config_state.config_state import ConfigState
 
 
 def compare_states(state1: ObjectState, state2: ObjectState):
+
   def compare_dicts(dict1, dict2):
+
     def compare_values(v1, v2):
       if isinstance(v1, ConfigState):
         compare_states(v1.get_state(), v2.get_state())

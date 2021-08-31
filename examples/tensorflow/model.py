@@ -16,9 +16,11 @@ from config_state import stateproperty
 
 @builder
 class Model(ConfigState):
-  input_shape: Tuple[int] = ConfigField(..., "Input shape of the model",
+  input_shape: Tuple[int] = ConfigField(...,
+                                        "Input shape of the model",
                                         type=tuple)
-  output_units: Optional[int] = ConfigField(..., "Model's output units count",
+  output_units: Optional[int] = ConfigField(...,
+                                            "Model's output units count",
                                             type=int)
 
   def __init__(self, config):
@@ -31,9 +33,9 @@ class Model(ConfigState):
 
   @property
   def keras_model(self) -> tf.keras.Model:
-    if self._keras_model is None and not isinstance(self.input_shape,
-                                                    DeferredConf) and not isinstance(
-      self.output_units, DeferredConf):
+    if self._keras_model is None and not isinstance(
+        self.input_shape, DeferredConf) and not isinstance(
+            self.output_units, DeferredConf):
       self._keras_model = self._build_keras_model()
     return self._keras_model
 
@@ -49,8 +51,9 @@ class Model(ConfigState):
 @register
 class MultiLayerPerceptron(Model):
   structure: List[int] = ConfigField([128], "hidden structure of the MLP")
-  dropout_rate: float = ConfigField(0.0, "Dropout rate applied on the last "
-                                         "hidden layer.")
+  dropout_rate: float = ConfigField(
+      0.0, "Dropout rate applied on the last "
+      "hidden layer.")
 
   def _build_keras_model(self) -> tf.keras.Model:
     layers = [tf.keras.layers.Flatten(input_shape=self.input_shape)]
@@ -104,8 +107,9 @@ class Ensembler(Model):
   output_units = ConfigField(model.output_units)
 
   def _build_keras_model(self) -> tf.keras.Model:
-    models = [self.model._build_keras_model() for _ in
-              range(self.ensemble_size)]
+    models = [
+        self.model._build_keras_model() for _ in range(self.ensemble_size)
+    ]
 
     input = tf.keras.layers.InputLayer(input_shape=self.input_shape).output
 

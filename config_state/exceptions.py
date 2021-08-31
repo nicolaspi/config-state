@@ -3,6 +3,7 @@ class ConfigError(Exception):
 
 
 def exception_handler(func):
+
   def wrapped(*args, **kwargs):
     self = args[0]
     try:

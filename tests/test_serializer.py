@@ -9,8 +9,11 @@ from tests.objects import SubFooWithRef2
 from tests.utils import save_load_compare
 
 default_conf = {'license_key': 1234}
-conf_ref = {'param_ref': 'ref_license', 'param_ref2': 'ref2_license',
-            'date_ref': '2020-02-02 00:00:00'}
+conf_ref = {
+    'param_ref': 'ref_license',
+    'param_ref2': 'ref2_license',
+    'date_ref': '2020-02-02 00:00:00'
+}
 conf_ref2 = {"ref": "ref_param"}
 
 

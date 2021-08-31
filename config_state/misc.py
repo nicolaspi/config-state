@@ -1,8 +1,8 @@
 import base64
 import hashlib
 
-
 # https://stackoverflow.com/a/42151923
+
 
 def make_hash_sha256(o):
   hasher = hashlib.sha256()

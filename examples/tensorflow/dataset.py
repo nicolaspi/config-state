@@ -26,14 +26,16 @@ class Dataset(ConfigState):
 
   def get_train_set(self) -> tf.data.Dataset:
     """returns the training set"""
-    ds: tf.data.Dataset = tfds.load(self.name, split='train',
+    ds: tf.data.Dataset = tfds.load(self.name,
+                                    split='train',
                                     as_supervised=True)
     ds = ds.shuffle(buffer_size=10 * self.batch_size).batch(self.batch_size)
     return ds.map(lambda x, y: (tf.cast(x, tf.float32) / 255.0, y))
 
   def get_test_set(self) -> tf.data.Dataset:
     """returns the test set"""
-    ds: tf.data.Dataset = tfds.load(self.name, split='test',
+    ds: tf.data.Dataset = tfds.load(self.name,
+                                    split='test',
                                     batch_size=self.batch_size,
                                     as_supervised=True)
     return ds.map(lambda x, y: (tf.cast(x, tf.float32) / 255.0, y))

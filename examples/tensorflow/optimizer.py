@@ -27,7 +27,8 @@ class Adam(Optimizer):
   @property
   def keras_optimizer(self) -> tf.keras.optimizers.Optimizer:
     return tf.keras.optimizers.Adam(learning_rate=self.learning_rate,
-                                    beta_1=self.beta_1, beta_2=self.beta_2,
+                                    beta_1=self.beta_1,
+                                    beta_2=self.beta_2,
                                     epsilon=self.epsilon)
 
 
@@ -40,5 +41,6 @@ class RMSprop(Optimizer):
   @property
   def keras_optimizer(self) -> tf.keras.optimizers.Optimizer:
     return tf.keras.optimizers.RMSprop(learning_rate=self.learning_rate,
-                                       rho=self.rho, momentum=self.momentum,
+                                       rho=self.rho,
+                                       momentum=self.momentum,
                                        epsilon=self.epsilon)
