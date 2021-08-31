@@ -18,7 +18,7 @@ class Foo(ConfigState):
   class_rates: dict = ConfigField({'cat': 0.5, 'dog': 0.5}, "Class rates")
   license_key: str = ConfigField(None,
                                  "License authorization key",
-                                 mandatory=True)
+                                 required=True)
   date: datetime = ConfigField(value='2019-01-01 00:00:00',
                                type=datetime,
                                doc="some date",
@@ -64,7 +64,7 @@ class NestedFoo(Foo):
 class NestedFoo2(Foo):
   sub_foo: SubFoo = ConfigField(type=SubFoo,
                                 doc="A MetaConfigState as config field",
-                                mandatory=True)
+                                required=True)
 
   def __init__(self, config=None):
     super().__init__(config)

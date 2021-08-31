@@ -33,7 +33,7 @@ from tests.utils import compare_states
 
 
 def test_config_consistency():
-  # missing mandatory fields
+  # missing required fields
   with pytest.raises(ConfigError):
     Foo(config={})
 

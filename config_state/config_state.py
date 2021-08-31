@@ -140,7 +140,7 @@ class _MetaConfigState(ABCMeta):
                                             type=v._type_,
                                             force_type=v._force_type_,
                                             factory=v._factory_,
-                                            mandatory=v._mandatory_)
+                                            required=v._mandatory_)
       else:
         copy_config_fields[k] = v
 
@@ -248,7 +248,7 @@ class _MetaConfigState(ABCMeta):
                                                 v._doc_,
                                                 type=v._type_,
                                                 static=v._static_,
-                                                mandatory=v._mandatory_)
+                                                required=v._mandatory_)
               self._config_fields[k] = resolved_conf_field
 
       if "___props_initialized___" not in cls.__dict__:
@@ -308,7 +308,7 @@ class ConfigField:
       the same type as `type`, otherwise forces them to be of same type
       as `value`
       static (bool): If `True` the default value is used and can't be overridden
-      mandatory (bool): If `True` a value must be provided uppon
+      required (bool): If `True` a value must be provided uppon
       configuration and the default `value` should be `None`
   """
 
@@ -318,7 +318,7 @@ class ConfigField:
                type: type = None,
                force_type: bool = False,
                static: bool = False,
-               mandatory: bool = False,
+               required: bool = False,
                factory: Callable = None):
     self._value_ = value
     self._doc_ = doc
@@ -326,7 +326,7 @@ class ConfigField:
     self._force_type_ = force_type  # Force config override to be of the
     # same type
     self._static_ = static  # Prevent default conf to be updated
-    self._mandatory_ = mandatory
+    self._mandatory_ = required
     self._factory_ = factory  # factory invoked if value don't  match type
     self.__post_init__()
 
@@ -629,8 +629,8 @@ class RefConfigField(ConfigField):
     self._paths_ = paths
     self._paths_id_ = paths_id
 
-    mandatory = any([ref.ref._mandatory_ for ref in unmangled_refs])
-    self._mandatory_ = mandatory
+    required = any([ref.ref._mandatory_ for ref in unmangled_refs])
+    self._mandatory_ = required
     self._type_ = type
     self._value_ = unmangled_refs
     self._factory_ = factory
@@ -946,7 +946,7 @@ class ConfigState(metaclass=_MetaConfigState):
 
     if mandatory_fields:
       raise AttributeError(f"Those "
-                           f"mandatory fields have not been specified "
+                           f"required fields have not been specified "
                            f"{mandatory_fields}")
 
   @exception_handler

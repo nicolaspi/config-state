@@ -33,7 +33,7 @@ import numpy as np
 
 class Foo(ConfigState):
     learning_rate: float = ConfigField(0.1, 'The learning rate', force_type=True)
-    license_key: str = ConfigField(None, 'License key', mandatory=True)
+    license_key: str = ConfigField(None, 'License key', required=True)
     log_dir: Path = ConfigField('./', 'Path to a folder', type=Path)
 
     def __init__(self, config=None):
@@ -78,13 +78,13 @@ But changing a state variable is ok:
 foo.iteration += 1 # Ok, state variable
 ```
 
-Missing mandatory fields raises an exception:
+Missing required fields raises an exception:
 ```python
 conf = {
         'learning_rate': 0.1,
         'log_dir': 'logs/'
     }
-foo = Foo(conf) # ConfigError: Configuring 'Foo': Those mandatory fields have not been specified {'license_key'}
+foo = Foo(conf) # ConfigError: Configuring 'Foo': Those required fields have not been specified {'license_key'}
 ```
 
 Configuring invalid fields raise an exception:
@@ -196,10 +196,10 @@ serializer.save(foo, 'foo.pkl')
 If a `ConfigField` has a specified `type` but the type of the provided `value` is different, `type` is used as an implicit factory by calling `type(value)`. This is useful for nested `ConfigState` objects:
 ```python
 class NestedFoo(ConfigState):
-    license_key: str = ConfigField(type=str, mandatory=True)
+    license_key: str = ConfigField(type=str, required=True)
     foo: Foo = ConfigField(type=Foo,
                            doc='A ConfigState as config field',
-                           mandatory=True)
+                           required=True)
 ```
 ```python
 conf = {

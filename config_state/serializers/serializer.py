@@ -13,7 +13,7 @@ from config_state.buildable import builder
 class Serializer(ConfigState):
   is_binary: bool = ConfigField(None,
                                 "Whether the serializer is binary",
-                                mandatory=True)
+                                required=True)
 
   def __init__(self, config):
     super().__init__(config)
