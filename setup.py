@@ -16,7 +16,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/nicolaspi/config-state",
-    packages=setuptools.find_packages(),
+    packages=setuptools.find_packages(exclude=('tests', 'examples')),
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
