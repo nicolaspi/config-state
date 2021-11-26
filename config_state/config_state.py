@@ -310,6 +310,8 @@ class ConfigField:
       static (bool): If `True` the default value is used and can't be overridden
       required (bool): If `True` a value must be provided uppon
       configuration and the default `value` should be `None`
+      exclude_hash (bool): If `True` the field is excluded from the hash
+      representation.
   """
 
   def __init__(self,
@@ -319,7 +321,8 @@ class ConfigField:
                force_type: bool = False,
                static: bool = False,
                required: bool = False,
-               factory: Callable = None):
+               factory: Callable = None,
+               exclude_hash: bool = False):
     self._value_ = value
     self._doc_ = doc
     self._type_ = type
@@ -328,6 +331,7 @@ class ConfigField:
     self._static_ = static  # Prevent default conf to be updated
     self._mandatory_ = required
     self._factory_ = factory  # factory invoked if value don't  match type
+    self._exclude_hash_ = exclude_hash
     self.__post_init__()
 
   def __post_init__(self):
@@ -969,7 +973,8 @@ class ConfigState(metaclass=_MetaConfigState):
                                            attr._doc_,
                                            type=_type,
                                            force_type=attr._force_type_,
-                                           factory=attr._factory_)
+                                           factory=attr._factory_,
+                                           exclude_hash=attr._exclude_hash_)
 
   def get_state(self) -> ObjectState:
     """Returns the state of the object as a `ObjectState` instance that can be
@@ -1030,7 +1035,9 @@ class ConfigState(metaclass=_MetaConfigState):
 
     for k, v in state.config.items():
       type = locate(v.type) if v.type is not None else None
-      self._config_fields[k] = ConfigField(v.value, v.doc, type=type)
+      self._config_fields[k] = ConfigField(
+        v.value, v.doc, type=type,
+        exclude_hash=self._config_fields[k]._exclude_hash_)
 
     for k, v in state.internal_state.items():
       if k in self._state_vars:
@@ -1101,12 +1108,13 @@ class ConfigState(metaclass=_MetaConfigState):
     hashes = []
     none_hash = "@!mrandom_string__None__"
     for k, field in self._config_fields.items():
-      v = field._value_
-      if isinstance(v, ConfigState):
-        hashes.append(v.config_hash())
-      elif v is None:
-        hashes.append(none_hash)
-      else:
-        hashes.append(make_hashable(v))
+      if not field._exclude_hash_:
+        v = field._value_
+        if isinstance(v, ConfigState):
+          hashes.append(v.config_hash())
+        elif v is None:
+          hashes.append(none_hash)
+        else:
+          hashes.append(make_hashable(v))
 
     return make_hash_sha256(hashes).rstrip("=")

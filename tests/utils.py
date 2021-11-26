@@ -9,18 +9,18 @@ def compare_states(state1: ObjectState, state2: ObjectState):
 
   def compare_dicts(dict1, dict2):
 
-    def compare_values(v1, v2):
-      if isinstance(v1, ConfigState):
-        compare_states(v1.get_state(), v2.get_state())
+    def compare_field(v1, v2):
+      if isinstance(v1.value, ConfigState):
+        compare_states(v1.value.get_state(), v2.value.get_state())
       else:
         assert v1 == v2
 
     assert set(dict1.keys()) == set(dict2.keys())
 
     for k in dict1.keys():
-      v1 = dict1[k].value
-      v2 = dict2[k].value
-      compare_values(v1, v2)
+      v1 = dict1[k]
+      v2 = dict2[k]
+      compare_field(v1, v2)
 
   compare_dicts(state1.internal_state, state2.internal_state)
   compare_dicts(state1.config, state2.config)

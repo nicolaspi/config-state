@@ -601,11 +601,13 @@ def test_save_load_cycle(tmpdir):
 
 
 def test_config_hash():
-  foo = Foo(config={'license_key': '1234'})
-  nfoo = NestedFoo2({'license_key': 0, 'sub_foo': {'license_key': 0}})
+  foo = Foo(config={'license_key': '1234', 'path': 'this/path'})
+  nfoo = NestedFoo2({'license_key': 0, 'sub_foo': {'license_key': 0},
+                     'path':'this/path'})
 
-  foo2 = Foo(config={'license_key': '1234'})
-  nfoo2 = NestedFoo2({'license_key': 0, 'sub_foo': {'license_key': 0}})
+  foo2 = Foo(config={'license_key': '1234', 'path': 'that/path'})
+  nfoo2 = NestedFoo2({'license_key': 0, 'sub_foo': {'license_key': 0},
+                      'path': 'that/path'})
 
   assert (foo.config_hash() == foo2.config_hash())
   assert (nfoo.config_hash() == nfoo2.config_hash())
