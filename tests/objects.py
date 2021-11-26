@@ -23,8 +23,10 @@ class Foo(ConfigState):
                                type=datetime,
                                doc="some date",
                                factory=date_factory)
-  path: Path = ConfigField(value="./", type=Path, doc="path param",
-                        exclude_hash=True)
+  path: Path = ConfigField(value="./",
+                           type=Path,
+                           doc="path param",
+                           exclude_hash=True)
 
   def __init__(self, config=None):
     super().__init__(config=config)

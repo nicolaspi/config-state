@@ -1036,8 +1036,10 @@ class ConfigState(metaclass=_MetaConfigState):
     for k, v in state.config.items():
       type = locate(v.type) if v.type is not None else None
       self._config_fields[k] = ConfigField(
-        v.value, v.doc, type=type,
-        exclude_hash=self._config_fields[k]._exclude_hash_)
+          v.value,
+          v.doc,
+          type=type,
+          exclude_hash=self._config_fields[k]._exclude_hash_)
 
     for k, v in state.internal_state.items():
       if k in self._state_vars:
