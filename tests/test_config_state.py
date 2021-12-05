@@ -2,6 +2,7 @@ import pickle
 from dataclasses import FrozenInstanceError
 from datetime import datetime
 from pathlib import Path
+from typing import List
 
 import pytest
 
@@ -610,14 +611,24 @@ def test_config_hash():
       'path': 'this/path'
   })
 
-  foo2 = Foo(config={'license_key': '1234', 'path': 'that/path'})
+  foo2 = Foo(config={'license_key': '1234', 'path': 'that_other/path'})
   nfoo2 = NestedFoo2({
       'license_key': 0,
       'sub_foo': {
           'license_key': 0
       },
-      'path': 'that/path'
+      'path': 'that_other/path'
   })
 
   assert (foo.config_hash() == foo2.config_hash())
   assert (nfoo.config_hash() == nfoo2.config_hash())
+
+  class NestedList(ConfigState):
+    foos: List[Foo] = ConfigField(None, "List of foos")
+
+  list_foo = NestedList(config={'foos': [foo, foo2]})
+  list_foo2 = NestedList(config={'foos': [foo, foo]})
+  list_foo3 = NestedList(config={'foos': [foo2, foo2]})
+
+  assert (list_foo.config_hash() == list_foo2.config_hash())
+  assert (list_foo.config_hash() == list_foo3.config_hash())

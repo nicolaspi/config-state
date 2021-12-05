@@ -1099,24 +1099,22 @@ class ConfigState(metaclass=_MetaConfigState):
     return stream.replace("'", '')
 
   def config_hash(self):
-    """Compute the a hash representation of the configuration.
+    """Compute a hash representation of the configuration.
 
     Returns:
       The sha256 hash representation of the instance's configuration.
     """
     from config_state.misc import make_hash_sha256
-    from config_state.misc import make_hashable
+    from config_state.misc import make_config_hashable
 
     hashes = []
     none_hash = "@!mrandom_string__None__"
     for k, field in self._config_fields.items():
       if not field._exclude_hash_:
         v = field._value_
-        if isinstance(v, ConfigState):
-          hashes.append(v.config_hash())
-        elif v is None:
+        if v is None:
           hashes.append(none_hash)
         else:
-          hashes.append(make_hashable(v))
+          hashes.append(make_config_hashable(v))
 
     return make_hash_sha256(hashes).rstrip("=")

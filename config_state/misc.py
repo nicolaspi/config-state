@@ -21,3 +21,13 @@ def make_hashable(o):
     return tuple(sorted(make_hashable(e) for e in o))
 
   return o
+
+
+def make_config_hashable(o):
+  o = make_hashable(o)
+  from config_state import ConfigState
+  if isinstance(o, ConfigState):
+    return o.config_hash()
+  elif isinstance(o, tuple):
+    return tuple((make_config_hashable(e) for e in o))
+  return o
