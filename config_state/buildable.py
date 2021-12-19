@@ -6,6 +6,12 @@ config_field_name = 'class'
 config_field_name_internal = '__builder_class__'
 
 
+def _set_config_field(cls):
+  conf_field = ConfigField(cls.__name__, "Type of the built object")
+  config_defaults = cls._config_fields_default[cls]
+  config_defaults[config_field_name] = conf_field
+
+
 def builder(cls):
   """A Decorator that add factory logic into a `ConfigState`. A builder can
   produce instance of subclasses that have been decorated with `@register`.
@@ -27,10 +33,7 @@ def builder(cls):
                       f"Buildable objects")
 
   setattr(cls, reg_attr, {cls.__name__: cls})
-  conf_field = ConfigField(cls.__name__, "Type of the built object")
-  config_defaults = cls._config_fields_default[cls]
-
-  config_defaults[config_field_name] = conf_field
+  _set_config_field(cls)
 
   def __new__(kls, *args, **kwargs):
     registry = getattr(kls, reg_attr, {})
@@ -110,5 +113,6 @@ def register(cls):
 
   registry[cls.__name__] = cls
   setattr(registry_base, reg_attr, registry)
+  _set_config_field(cls)
 
   return cls
