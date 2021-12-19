@@ -129,6 +129,35 @@ def test_nested_config_state():
   assert foo.license_key == '2134'
 
 
+def test_config_state_kwargs_init():
+  foo = NestedFoo2(
+      **{
+          'sub_foo': {
+              'learning_rate': 0.123,
+              'license_key': '4321'
+          },
+          'license_key': '2134'
+      })
+  assert isinstance(foo.sub_foo, SubFoo)
+  assert foo.sub_foo.learning_rate == 0.123
+  assert foo.sub_foo.license_key == '4321'
+  assert foo.license_key == '2134'
+
+  foo = NestedFoo2(
+      **{
+          'sub_foo': SubFoo({
+              'learning_rate': 0.123,
+              'license_key': '4321'
+          }),
+          'license_key': '2134'
+      })
+
+  assert isinstance(foo.sub_foo, SubFoo)
+  assert foo.sub_foo.learning_rate == 0.123
+  assert foo.sub_foo.license_key == '4321'
+  assert foo.license_key == '2134'
+
+
 def test_nested_with_default_value():
 
   class NestedFooWithDefaultValue(Foo):
@@ -296,6 +325,7 @@ def test_nested():
 
 def test_deferred():
   foo = Foo({'license_key': '...'})
+
   # ok, Ellipsis
   foo.license_key = 1337
 
@@ -344,20 +374,35 @@ def test_no_init():
   assert sub.param == 'value'
 
 
-def test_multi_bases():
+def test_multi_bases_multi_param_constructor():
 
   class Base0:
 
     def __init__(self, param1=None, param2=None):
-      pass
+      self.param1 = param1
+      self.param2 = param2
 
   class Sub(Base0, Base):
 
     def __init__(self, param1=None, config=None):
       Base.__init__(self, config=config)
+      Base0.__init__(self, param1)
 
   sub = Sub(config={'param': 'value'})
   assert sub.param == 'value'
+  assert sub.param1 is None
+  assert sub.param2 is None
+
+  sub = Sub(param1=True, config={'param': 'value'})
+  assert sub.param == 'value'
+  assert sub.param1 == True
+  assert sub.param2 is None
+
+  #Empty kwargs constructor call
+  sub = Sub(True, {'param': 'value'})
+  assert sub.param == 'value'
+  assert sub.param1 == True
+  assert sub.param2 is None
 
 
 def test_references():

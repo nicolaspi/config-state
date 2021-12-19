@@ -194,12 +194,45 @@ class _MetaConfigState(ABCMeta):
       __core_init__ = cls.__dict__["__init__"]
 
     signature = inspect.signature(__core_init__)
-    if len(signature.parameters) != 2 and "config" not in signature.parameters:
-      raise TypeError(f"The constructor of {cls} should take one "
-                      f"`config` parameter")
+    if len(signature.parameters) != 2:
+      if "config" not in signature.parameters:
+        raise TypeError(f"The constructor of {cls} should take one "
+                        f"`config` parameter")
+      cls.__config_param_index__ = list(signature.parameters).index("config")\
+                                   - 1
+      cls.__is_pure_signature__ = False
+    else:
+      cls.__config_param_index__ = 0
+      cls.__is_pure_signature__ = True
 
     @exception_handler
-    def __init__(self, config: Optional[Dict] = None, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
+      # Unmangling parameters
+      if cls.__is_pure_signature__:
+        if len(args) == 1 and len(kwargs) == 0:
+          config = args[0]
+          args = ()
+        elif len(kwargs) == 1 and 'config' in kwargs:
+          config = kwargs['config']
+          kwargs = {}
+        elif len(args) == 0 and len(kwargs) > 0:
+          config = kwargs
+          kwargs = {}
+        elif len(args) == 0 and len(kwargs) == 0:
+          config = None
+        else:
+          raise ValueError("Bad arguments given to the constructor.")
+      else:
+        if len(args) > cls.__config_param_index__:
+          config = args[cls.__config_param_index__]
+          args = tuple(args[:cls.__config_param_index__] +
+                       args[1 + cls.__config_param_index__:])
+        elif "config" in kwargs:
+          config = kwargs["config"]
+          del kwargs["config"]
+        else:
+          config = None
+
       if config is not None:
         config = copy(config)
         # replace Ellipsis with DeferredConf
@@ -705,6 +738,8 @@ class _DeferredConf(ConfigField):
 @dataclass
 class DeferredConf(object):
   """ Represent a config value that has been initialized with an Ellipsis.
+  A DeferredConf stores a mutable reference to allow update of all
+  potential ConfField that are references to this DeferredConf
   """
   value: Any = Ellipsis
 
