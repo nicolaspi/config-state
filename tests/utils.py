@@ -12,6 +12,8 @@ def compare_states(state1: ObjectState, state2: ObjectState):
     def compare_field(v1, v2):
       if isinstance(v1.value, ConfigState):
         compare_states(v1.value.get_state(), v2.value.get_state())
+      elif isinstance(v1.value, ObjectState):
+        compare_states(v1.value, v2.value)
       else:
         assert v1 == v2
 

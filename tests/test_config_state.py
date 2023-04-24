@@ -688,3 +688,22 @@ def test_clone():
 
   foo_clone.iteration = 3
   assert foo.iteration != foo_clone.iteration
+
+  class NestedList(ConfigState):
+    foos: List[Foo] = ConfigField(None, "List of foos")
+
+  foo1 = Foo(config={'license_key': '4321', 'path': 'that/path'})
+  foo1.iteration = 123
+  foo1.param = Foo(config={'license_key': 'foo_param'})
+
+  list_foo = NestedList(config={'foos': [foo1]})
+
+  clone_list_foo = list_foo.clone()
+
+  list_foo.foos[0].iteration = 567
+  list_foo.foos[0].param = 'a_string'
+
+  assert list_foo.foos[0].iteration != clone_list_foo.foos[0].iteration
+  assert list_foo.foos[0].param == 'a_string'
+  assert isinstance(clone_list_foo.foos[0].param, Foo)
+  assert clone_list_foo.foos[0].param.license_key == 'foo_param'

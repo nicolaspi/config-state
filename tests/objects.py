@@ -186,3 +186,13 @@ class JsonableFoo(ConfigState):
   def __init__(self, config=None):
     super().__init__(config=config)
     self.iteration = StateVar(0, "Training iterations")
+    self._param = None
+
+  @stateproperty
+  def param(self):
+    '''Model's parameter'''
+    return self._param
+
+  @param.setter
+  def param(self, val):
+    self._param = val

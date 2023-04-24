@@ -31,3 +31,23 @@ def make_config_hashable(o):
   elif isinstance(o, tuple):
     return tuple((make_config_hashable(e) for e in o))
   return o
+
+
+def get_state(o):
+  """Get the state of a potentially nested object."""
+  _get_state = getattr(o, '__getstate__', None)
+  if _get_state is not None:
+    return _get_state()
+  elif isinstance(o, list):
+    return [get_state(s) for s in o]
+  elif isinstance(o, tuple):
+    return tuple([get_state(s) for s in o])
+  elif isinstance(o, set):
+    return set([get_state(s) for s in o])
+  elif isinstance(o, dict):
+    copy_dict = {}
+    for k, v in o.items():
+      copy_dict[k] = get_state(v)
+    return copy_dict
+  else:
+    return o

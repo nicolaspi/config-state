@@ -19,7 +19,9 @@ conf_ref2 = {"ref": "ref_param"}
 
 def test_serialize_with_pickle(tmpdir):
   serializer = Serializer({'class': 'Pickle'})
-  save_load_compare(serializer, Foo(default_conf), tmpdir)
+  foo = Foo(default_conf)
+  foo.param = Foo(default_conf)
+  save_load_compare(serializer, foo, tmpdir)
   save_load_compare(serializer, SubFoo(default_conf), tmpdir)
   save_load_compare(serializer, JsonableFoo(), tmpdir)
   save_load_compare(serializer, SubFooWithRef(conf_ref), tmpdir)
@@ -39,4 +41,5 @@ def test_serialize_with_json(tmpdir):
 
   foo = JsonableFoo()
   foo.iteration += 1
+  foo.param = JsonableFoo()
   save_load_compare(serializer, foo, tmpdir)

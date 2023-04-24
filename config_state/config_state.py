@@ -13,6 +13,7 @@ from typing import Union
 import yaml
 
 from config_state.exceptions import exception_handler
+from config_state.misc import get_state
 
 __VERSION__ = 1.0
 
@@ -475,7 +476,7 @@ class ConfigField:
   def __getstate__(self):
     _type = None if self._type_ is None else '.'.join(
         [self._type_.__module__, self._type_.__name__])
-    return FrozenPortableField(self._value_, self._doc_, _type)
+    return FrozenPortableField(get_state(self._value_), self._doc_, _type)
 
   def __setstate__(self, state):
     type = state.type and locate(state.type) or None
@@ -899,7 +900,7 @@ class StateVar:
   def __getstate__(self):
     _type = None if self._type_ is None else '.'.join(
         [self._type_.__module__, self._type_.__name__])
-    return PortableField(self._value_, self._doc_, _type)
+    return PortableField(get_state(self._value_), self._doc_, _type)
 
   def __setstate__(self, state):
     self.__init__(state.value, state.doc, state.type)
@@ -1067,10 +1068,31 @@ class ConfigState(metaclass=_MetaConfigState):
     return obj_state
 
   def __setstate__(self, state: ObjectState):
+
+    def unmangle_state(state):
+      """Unmangle the potentially nested ObjectState objects"""
+      if isinstance(state, ObjectState):
+        instance = object.__new__(state.type)
+        instance.set_state(state)
+        return instance
+      elif isinstance(state, list):
+        return [unmangle_state(s) for s in state]
+      elif isinstance(state, tuple):
+        return tuple([unmangle_state(s) for s in state])
+      elif isinstance(state, set):
+        return set([unmangle_state(s) for s in state])
+      elif isinstance(state, dict):
+        copy_dict = {}
+        for k, v in state.items():
+          copy_dict[k] = unmangle_state(v)
+        return copy_dict
+      else:
+        return state
+
     if not hasattr(self, "_config_fields"):
       config = {}
       for k, v in state.config.items():
-        config[k] = v.value
+        config[k] = unmangle_state(v.value)
       self.__init__(config)
     self.check_validity()
     if not isinstance(self, state.type):
@@ -1084,7 +1106,7 @@ class ConfigState(metaclass=_MetaConfigState):
     for k, v in state.config.items():
       type = locate(v.type) if v.type is not None else None
       self._config_fields[k] = ConfigField(
-          v.value,
+          unmangle_state(v.value),
           v.doc,
           type=type,
           exclude_hash=self._config_fields[k]._exclude_hash_)
@@ -1092,9 +1114,9 @@ class ConfigState(metaclass=_MetaConfigState):
     for k, v in state.internal_state.items():
       if k in self._state_vars:
         type = locate(v.type) if v.type is not None else None
-        self._state_vars[k] = StateVar(v.value, v.doc, type)
+        self._state_vars[k] = StateVar(unmangle_state(v.value), v.doc, type)
       else:
-        setattr(self, k, v.value)
+        setattr(self, k, unmangle_state(v.value))
 
     return self
 

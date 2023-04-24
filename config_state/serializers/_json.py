@@ -48,10 +48,11 @@ class Json(Serializer):
       for k, v in internal.items():
         internal[k] = self._convert(v, PortableField)
       return ObjectState(type=_type, config=config, internal_state=internal)
-    elif klass in [PortableField, FrozenPortableField]:
-      type = locate(object['type'])
-
-      object['value'] = self._convert(object['value'], type)
+    elif klass in (PortableField, FrozenPortableField):
+      _type = locate(object['type'])
+      if _type is not None and issubclass(_type, ConfigState):
+        _type = ObjectState
+      object['value'] = self._convert(object['value'], _type)
 
       fields = {f.name: object[f.name] for f in dataclasses.fields(klass)}
       return klass(**fields)
