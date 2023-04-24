@@ -1034,6 +1034,17 @@ class ConfigState(metaclass=_MetaConfigState):
     """
     self.__setstate__(state)
 
+  def clone(self):
+    """Returns a clone of this `ConfigState` object.
+
+    Returns:
+      ConfigState: the clone object
+    """
+    state = self.get_state()
+    instance = object.__new__(state.type)
+    instance.set_state(state)
+    return instance
+
   def __getstate__(self) -> ObjectState:
     self.check_validity()
     conf_fields = dict([(k, v.__getstate__())

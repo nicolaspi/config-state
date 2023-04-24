@@ -677,3 +677,14 @@ def test_config_hash():
 
   assert (list_foo.config_hash() == list_foo2.config_hash())
   assert (list_foo.config_hash() == list_foo3.config_hash())
+
+
+def test_clone():
+  foo = Foo(config={'license_key': '1234'})
+  foo.iteration == 2
+
+  foo_clone = foo.clone()
+  compare_states(foo.get_state(), foo_clone.get_state())
+
+  foo_clone.iteration = 3
+  assert foo.iteration != foo_clone.iteration
