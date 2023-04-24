@@ -72,6 +72,7 @@ class SubFoo6(Foo):
 
 @register
 class SubFooWithCustomNew(Foo):
+
   def __new__(cls, *args, **kwargs):
     instance = object.__new__(cls)
     instance.ran_custom_new = True
@@ -80,9 +81,11 @@ class SubFooWithCustomNew(Foo):
   def method(self):
     pass
 
+
 @builder
 @register
 class FooWithCustomNew(MasterFoo):
+
   def __new__(cls, *args, **kwargs):
     instance = object.__new__(cls)
     instance.ran_custom_builder_new = True
@@ -91,18 +94,23 @@ class FooWithCustomNew(MasterFoo):
   def method(self):
     pass
 
+
 class CustomNewParent(ConfigState):
+
   def __new__(cls, *args, **kwargs):
     instance = object.__new__(cls)
     instance.ran_custom_builder_new = True
     return instance
 
+
 @builder
 class BuilderWithCustomNewParent(CustomNewParent):
   pass
 
+
 @register
 class SubFooWithCustomNew2(FooWithCustomNew):
+
   def __new__(cls, *args, **kwargs):
     instance = object.__new__(cls)
     instance.ran_custom_new = True
@@ -112,6 +120,7 @@ class SubFooWithCustomNew2(FooWithCustomNew):
 @register
 class SubFoo7(BuilderWithCustomNewParent):
   pass
+
 
 def test_builder():
   config = {}

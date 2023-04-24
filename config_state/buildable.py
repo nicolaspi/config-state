@@ -98,7 +98,8 @@ def builder(cls):
   # wrap any custom __new__
   for parent in cls.__mro__[:-1]:
     # check that the parent has a new that is not the result of a @builder decoration
-    if '__new__' in parent.__dict__ and (parent is cls or not reg_attr in parent.__dict__):
+    if '__new__' in parent.__dict__ and (parent is cls or
+                                         not reg_attr in parent.__dict__):
       cls.__wrapped_builder_new__ = parent.__new__
       break
 
