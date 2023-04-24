@@ -46,7 +46,10 @@ def builder(cls):
       config = None
 
     if config is None or config_field_name not in config:
-      return object.__new__(kls)
+      if hasattr(kls, '__wrapped_builder_new__'):
+        return kls.__wrapped_builder_new__(kls, *args, **kwargs)
+      else:
+        return object.__new__(kls)
     else:
       if config_field_name_internal in config:
         types = config[config_field_name_internal]
@@ -73,8 +76,13 @@ def builder(cls):
       config[config_field_name_internal] = '.'.join(types[1:])
       return subcls.__new__(subcls, config)
 
-    # todo: find a proper way to call the super.__new__ instead
-    instance = object.__new__(subcls)
+    if subcls.__new__ != kls.__new__:
+      instance = subcls.__new__(subcls, *args, **kwargs)
+    elif hasattr(subcls, '__wrapped_builder_new__'):
+      instance = subcls.__wrapped_builder_new__(subcls, *args, **kwargs)
+    else:
+      instance = object.__new__(subcls)
+
     if not isinstance(instance, kls):
       # In this case we need to invoke the __init__ ourselves
       instance.__init__(config)
@@ -86,6 +94,13 @@ def builder(cls):
 
   def __getnewargs__(self):
     return (None,)
+
+  # wrap any custom __new__
+  for parent in cls.__mro__[:-1]:
+    # check that the parent has a new that is not the result of a @builder decoration
+    if '__new__' in parent.__dict__ and (parent is cls or not reg_attr in parent.__dict__):
+      cls.__wrapped_builder_new__ = parent.__new__
+      break
 
   cls.__new__ = __new__
 

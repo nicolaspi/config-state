@@ -239,7 +239,8 @@ class _MetaConfigState(ABCMeta):
         for k, conf_item in config.items():
           # we containerize the Ellipsis in order to propagate its update to
           # all its references.
-          if conf_item is Ellipsis or conf_item == '...':
+          if conf_item is Ellipsis or \
+              ( isinstance(conf_item, str) and conf_item == '...'):
             config[k] = DeferredConf()
 
       if not hasattr(self, "_config_fields"):
@@ -407,7 +408,8 @@ class ConfigField:
     _type = get_param(2, 'type') or type(value)
     klass = cls
 
-    if isinstance(value, DeferredConf) or value is Ellipsis or '...' == value:
+    if isinstance(value, DeferredConf) or value is Ellipsis or \
+        (isinstance(value, str) and value == '...'):
       klass = _DeferredConf
 
     if isinstance(_type, _MetaConfigState):

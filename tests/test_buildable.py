@@ -13,9 +13,6 @@ from config_state.buildable import register
 @builder
 class MasterFoo(ConfigState):
 
-  def __init__(self, config):
-    super().__init__(config)
-
   @abstractmethod
   def method(self):
     pass
@@ -26,16 +23,10 @@ class MasterFoo(ConfigState):
 class Foo(MasterFoo):
   param1: int = ConfigField(0, "Param1")
 
-  def __init__(self, config):
-    super().__init__(config)
-
 
 @register
 class SubFoo(Foo):
   param1: int = ConfigField(10, "Param1")
-
-  def __init__(self, config):
-    super().__init__(config)
 
   def method(self):
     pass
@@ -45,9 +36,6 @@ class SubFoo(Foo):
 class SubFoo2(Foo):
   param2: int = ConfigField(10, "Param2")
 
-  def __init__(self, config):
-    super().__init__(config)
-
   def method(self):
     pass
 
@@ -55,9 +43,6 @@ class SubFoo2(Foo):
 @register
 class SubFoo3(SubFoo2):
   param3: int = ConfigField(1, "Param3")
-
-  def __init__(self, config):
-    super().__init__(config)
 
 
 @builder
@@ -84,6 +69,49 @@ class SubFoo6(Foo):
   def method(self):
     pass
 
+
+@register
+class SubFooWithCustomNew(Foo):
+  def __new__(cls, *args, **kwargs):
+    instance = object.__new__(cls)
+    instance.ran_custom_new = True
+    return instance
+
+  def method(self):
+    pass
+
+@builder
+@register
+class FooWithCustomNew(MasterFoo):
+  def __new__(cls, *args, **kwargs):
+    instance = object.__new__(cls)
+    instance.ran_custom_builder_new = True
+    return instance
+
+  def method(self):
+    pass
+
+class CustomNewParent(ConfigState):
+  def __new__(cls, *args, **kwargs):
+    instance = object.__new__(cls)
+    instance.ran_custom_builder_new = True
+    return instance
+
+@builder
+class BuilderWithCustomNewParent(CustomNewParent):
+  pass
+
+@register
+class SubFooWithCustomNew2(FooWithCustomNew):
+  def __new__(cls, *args, **kwargs):
+    instance = object.__new__(cls)
+    instance.ran_custom_new = True
+    return instance
+
+
+@register
+class SubFoo7(BuilderWithCustomNewParent):
+  pass
 
 def test_builder():
   config = {}
@@ -123,6 +151,23 @@ def test_builder():
 
   # Ok, instantiation without using the builder
   SubFoo6({})
+
+  config = {'class': 'SubFooWithCustomNew'}
+  sub_foo_with_custom_new = Foo(config)
+  assert hasattr(sub_foo_with_custom_new, 'ran_custom_new')
+
+  config = {'class': 'SubFooWithCustomNew2'}
+  sub_foo_with_custom_new = FooWithCustomNew(config)
+  assert hasattr(sub_foo_with_custom_new, 'ran_custom_new')
+
+  foo_with_custom_new = FooWithCustomNew()
+  assert hasattr(foo_with_custom_new, 'ran_custom_builder_new')
+
+  foo = BuilderWithCustomNewParent()
+  assert hasattr(foo, 'ran_custom_builder_new')
+
+  foo = BuilderWithCustomNewParent({'class': 'SubFoo7'})
+  assert hasattr(foo, 'ran_custom_builder_new')
 
 
 def test_nested_foo():
