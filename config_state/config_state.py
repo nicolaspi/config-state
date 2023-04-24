@@ -381,7 +381,27 @@ class ConfigField:
         _MetaConfigState) and self._value_ is not None and not isinstance(
             self._value_, self._type_):
       try:
-        if self._factory_ is not None:
+        # Python >3.11 have default __getstate__ defined.
+        # https://docs.python.org/3/library/pickle.html#object.__getstate__
+        default_getstate = getattr(object, '__getstate__', None)
+        type_getstate = getattr(self._type_, '__getstate__', None)
+        if_default_getstate = default_getstate and (default_getstate
+                                                    == type_getstate)
+        if hasattr(self._type_, '__setstate__'):
+          instance = object.__new__(self._type_)
+          value = instance.__setstate__(self._value_)
+        elif if_default_getstate and isinstance(self._value_, (dict, tuple)):
+          instance = object.__new__(self._type_)
+          state = self._value_
+          if isinstance(state, dict):
+            instance.__dict__ = state
+          elif isinstance(state, tuple):
+            if state[0] is not None:  # __dict__ state
+              instance.__dict__ = state[0]
+            for k, v in state[1].items():  # __slots__ state
+              setattr(instance, k, v)
+          value = instance
+        elif self._factory_ is not None:
           value = self._factory_(self._value_)
         elif self._force_type_:
           raise TypeError()
