@@ -19,6 +19,7 @@ from tests.objects import FooWithConfStateRef
 from tests.objects import FooWithMultiConfStateRef
 from tests.objects import NestedFoo
 from tests.objects import NestedFoo2
+from tests.objects import NestedListOfFoo
 from tests.objects import Sub1
 from tests.objects import Sub2
 from tests.objects import Sub3
@@ -689,16 +690,15 @@ def test_clone():
   foo_clone.iteration = 3
   assert foo.iteration != foo_clone.iteration
 
-  class NestedList(ConfigState):
-    foos: List[Foo] = ConfigField(None, "List of foos")
-
   foo1 = Foo(config={'license_key': '4321', 'path': 'that/path'})
   foo1.iteration = 123
   foo1.param = Foo(config={'license_key': 'foo_param'})
 
-  list_foo = NestedList(config={'foos': [foo1]})
+  list_foo = NestedListOfFoo(config={'foos': [foo1]})
 
   clone_list_foo = list_foo.clone()
+
+  compare_states(list_foo.get_state(), clone_list_foo.get_state())
 
   list_foo.foos[0].iteration = 567
   list_foo.foos[0].param = 'a_string'
@@ -707,3 +707,4 @@ def test_clone():
   assert list_foo.foos[0].param == 'a_string'
   assert isinstance(clone_list_foo.foos[0].param, Foo)
   assert clone_list_foo.foos[0].param.license_key == 'foo_param'
+  assert hasattr(clone_list_foo.foos[0].param, 'ran_custom_builder_new')

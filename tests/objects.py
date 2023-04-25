@@ -1,5 +1,6 @@
 from datetime import datetime
 from pathlib import Path
+from typing import List
 
 from config_state.config_state import ConfigField
 from config_state.config_state import ConfigState
@@ -27,6 +28,11 @@ class Foo(ConfigState):
                            type=Path,
                            doc="path param",
                            exclude_hash=True)
+
+  def __new__(cls, *args, **kwargs):
+    instance = object.__new__(cls)
+    instance.ran_custom_builder_new = True
+    return instance
 
   def __init__(self, config=None):
     super().__init__(config=config)
@@ -73,6 +79,10 @@ class NestedFoo2(Foo):
     super().__init__(config)
     # logic inside __init__ using nested config state conf should work
     self.boosted_learning_rate = self.sub_foo.learning_rate * 10.0
+
+
+class NestedListOfFoo(ConfigState):
+  foos: List[Foo] = ConfigField(None, "List of foos")
 
 
 class Base(ConfigState):

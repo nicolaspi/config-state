@@ -44,7 +44,7 @@ class Serializer(ConfigState):
     Deserialize a `ConfigState` from `stream`
     """
     state = self.load_state(file)
-    instance = object.__new__(state.type)
+    instance = state.type.__new__(state.type)
     instance.set_state(state)
     return instance
 

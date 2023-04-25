@@ -10,10 +10,18 @@ def compare_states(state1: ObjectState, state2: ObjectState):
   def compare_dicts(dict1, dict2):
 
     def compare_field(v1, v2):
-      if isinstance(v1.value, ConfigState):
-        compare_states(v1.value.get_state(), v2.value.get_state())
-      elif isinstance(v1.value, ObjectState):
-        compare_states(v1.value, v2.value)
+      assert type(v1) is type(v2)
+      if isinstance(v1, ConfigState):
+        compare_states(v1.get_state(), v2.get_state())
+      elif isinstance(v1, ObjectState):
+        compare_states(v1, v2)
+      elif isinstance(v1, (list, tuple)):
+        assert len(v1) == len(v2)
+        [compare_field(v, w) for v, w in zip(v1, v2)]
+      elif isinstance(v1, dict):
+        assert set(v1.keys()) == set(v2.keys())
+        for k in v1.keys():
+          compare_field(v1[k], v2[k])
       else:
         assert v1 == v2
 
@@ -22,7 +30,7 @@ def compare_states(state1: ObjectState, state2: ObjectState):
     for k in dict1.keys():
       v1 = dict1[k]
       v2 = dict2[k]
-      compare_field(v1, v2)
+      compare_field(v1.value, v2.value)
 
   compare_dicts(state1.internal_state, state2.internal_state)
   compare_dicts(state1.config, state2.config)

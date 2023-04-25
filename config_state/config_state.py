@@ -1,4 +1,5 @@
 import inspect
+import io
 from abc import ABCMeta
 from copy import copy
 from dataclasses import dataclass
@@ -13,7 +14,6 @@ from typing import Union
 import yaml
 
 from config_state.exceptions import exception_handler
-from config_state.misc import get_state
 
 __VERSION__ = 1.0
 
@@ -381,27 +381,7 @@ class ConfigField:
         _MetaConfigState) and self._value_ is not None and not isinstance(
             self._value_, self._type_):
       try:
-        # Python >3.11 have default __getstate__ defined.
-        # https://docs.python.org/3/library/pickle.html#object.__getstate__
-        default_getstate = getattr(object, '__getstate__', None)
-        type_getstate = getattr(self._type_, '__getstate__', None)
-        if_default_getstate = default_getstate and (default_getstate
-                                                    == type_getstate)
-        if hasattr(self._type_, '__setstate__'):
-          instance = object.__new__(self._type_)
-          value = instance.__setstate__(self._value_)
-        elif if_default_getstate and isinstance(self._value_, (dict, tuple)):
-          instance = object.__new__(self._type_)
-          state = self._value_
-          if isinstance(state, dict):
-            instance.__dict__ = state
-          elif isinstance(state, tuple):
-            if state[0] is not None:  # __dict__ state
-              instance.__dict__ = state[0]
-            for k, v in state[1].items():  # __slots__ state
-              setattr(instance, k, v)
-          value = instance
-        elif self._factory_ is not None:
+        if self._factory_ is not None:
           value = self._factory_(self._value_)
         elif self._force_type_:
           raise TypeError()
@@ -496,7 +476,7 @@ class ConfigField:
   def __getstate__(self):
     _type = None if self._type_ is None else '.'.join(
         [self._type_.__module__, self._type_.__name__])
-    return FrozenPortableField(get_state(self._value_), self._doc_, _type)
+    return FrozenPortableField(self._value_, self._doc_, _type)
 
   def __setstate__(self, state):
     type = state.type and locate(state.type) or None
@@ -920,7 +900,7 @@ class StateVar:
   def __getstate__(self):
     _type = None if self._type_ is None else '.'.join(
         [self._type_.__module__, self._type_.__name__])
-    return PortableField(get_state(self._value_), self._doc_, _type)
+    return PortableField(self._value_, self._doc_, _type)
 
   def __setstate__(self, state):
     self.__init__(state.value, state.doc, state.type)
@@ -1056,14 +1036,17 @@ class ConfigState(metaclass=_MetaConfigState):
     self.__setstate__(state)
 
   def clone(self):
-    """Returns a clone of this `ConfigState` object.
+    """Returns a clone of this `ConfigState` object using the Pickle serializer.
 
     Returns:
       ConfigState: the clone object
     """
-    state = self.get_state()
-    instance = object.__new__(state.type)
-    instance.set_state(state)
+    from config_state import Serializer
+    serializer = Serializer({'class': 'Pickle'})
+    f = io.BytesIO()
+    serializer.save(self, f)
+    f.seek(0)
+    instance = serializer.load(f)
     return instance
 
   def __getstate__(self) -> ObjectState:
@@ -1088,31 +1071,10 @@ class ConfigState(metaclass=_MetaConfigState):
     return obj_state
 
   def __setstate__(self, state: ObjectState):
-
-    def unmangle_state(state):
-      """Unmangle the potentially nested ObjectState objects"""
-      if isinstance(state, ObjectState):
-        instance = object.__new__(state.type)
-        instance.set_state(state)
-        return instance
-      elif isinstance(state, list):
-        return [unmangle_state(s) for s in state]
-      elif isinstance(state, tuple):
-        return tuple([unmangle_state(s) for s in state])
-      elif isinstance(state, set):
-        return set([unmangle_state(s) for s in state])
-      elif isinstance(state, dict):
-        copy_dict = {}
-        for k, v in state.items():
-          copy_dict[k] = unmangle_state(v)
-        return copy_dict
-      else:
-        return state
-
     if not hasattr(self, "_config_fields"):
       config = {}
       for k, v in state.config.items():
-        config[k] = unmangle_state(v.value)
+        config[k] = v.value
       self.__init__(config)
     self.check_validity()
     if not isinstance(self, state.type):
@@ -1126,7 +1088,7 @@ class ConfigState(metaclass=_MetaConfigState):
     for k, v in state.config.items():
       type = locate(v.type) if v.type is not None else None
       self._config_fields[k] = ConfigField(
-          unmangle_state(v.value),
+          v.value,
           v.doc,
           type=type,
           exclude_hash=self._config_fields[k]._exclude_hash_)
@@ -1134,9 +1096,9 @@ class ConfigState(metaclass=_MetaConfigState):
     for k, v in state.internal_state.items():
       if k in self._state_vars:
         type = locate(v.type) if v.type is not None else None
-        self._state_vars[k] = StateVar(unmangle_state(v.value), v.doc, type)
+        self._state_vars[k] = StateVar(v.value, v.doc, type)
       else:
-        setattr(self, k, unmangle_state(v.value))
+        setattr(self, k, v.value)
 
     return self
 
