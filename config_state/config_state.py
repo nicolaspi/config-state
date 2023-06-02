@@ -376,9 +376,8 @@ class ConfigField:
     if self._type_ is not None and not isinstance(self._type_, type):
       raise AttributeError(f"{type(self._type_).__name__} is not a `type`")
 
-    if not isinstance(
-        self._type_,
-        _MetaConfigState) and self._value_ is not None and not isinstance(
+    if not (isinstance(self._type_, _MetaConfigState) and isinstance(
+        self._value_, dict)) and self._value_ is not None and not isinstance(
             self._value_, self._type_):
       try:
         if self._factory_ is not None:
