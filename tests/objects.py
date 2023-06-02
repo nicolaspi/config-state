@@ -7,6 +7,7 @@ from config_state.config_state import ConfigState
 from config_state.config_state import reference
 from config_state.config_state import stateproperty
 from config_state.config_state import StateVar
+from tests.utils import config_factory
 
 
 def date_factory(str_date):
@@ -64,7 +65,8 @@ class SubFoo(Foo):
 
 class NestedFoo(Foo):
   sub_conf: SubFoo = ConfigField(SubFoo({'license_key': 0}),
-                                 "A ConfigState as config field")
+                                 doc="A ConfigState as config field",
+                                 factory=config_factory)
 
   def __init__(self, config=None):
     super().__init__(config)

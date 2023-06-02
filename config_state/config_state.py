@@ -256,11 +256,11 @@ class _MetaConfigState(ABCMeta):
           for k, v in conf_fields_default.items():
             # if the type is a ConfigState and the value is a dict,
             # we interpret it as a config and instantiate a ConfigState
-            if isinstance(v._type_, _MetaConfigState) and not isinstance(
-                v._value_, ConfigState):
-
+            if isinstance(v._type_, _MetaConfigState):
               if isinstance(config, dict) and k in config:
                 conf = config[k]
+              elif isinstance(v._value_, ConfigState):
+                continue
               elif isinstance(v._value_, dict):
                 conf = v._value_
               elif isinstance(config, dict):
@@ -843,8 +843,14 @@ class _ReferenceContext(object):
         return True, _ReferenceContext.updated_refs[path_id]
     return False, None
 
-  def build_type(self, config: Dict, conf_field: ConfigField) -> 'ConfigState':
+  def build_type(self, config: Any, conf_field: ConfigField) -> 'ConfigState':
     type = conf_field._type_
+    if config is not None and not isinstance(config, dict):
+      if conf_field._factory_ is not None:
+        config = conf_field._factory_(config)
+      if config is not None and not isinstance(config, dict):
+        raise TypeError(f"Type `{type(config)}` is not a `dict`.")
+
     if len(_ReferenceContext.references_to_init) > 0:
       _id = id(conf_field)
       _ReferenceContext._ids_path.append(_id)

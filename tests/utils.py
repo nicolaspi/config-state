@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 from config_state import ObjectState
@@ -48,3 +49,19 @@ def save_load_compare(serializer: Serializer, foo: ConfigState, tmpdir):
   state_loaded = foo.get_state()
 
   compare_states(state, state_loaded)
+
+
+def config_factory(config_info) -> dict:
+  if config_info is None:
+    return None
+  if isinstance(config_info, dict):
+    return config_info
+  if isinstance(config_info, str):
+    config_path = Path(config_info)
+
+    if config_path.suffix == '.json':
+      config = json.load(open(config_path, 'r'))
+    else:
+      raise ValueError(f"Unknown file format for {config_path}")
+
+  return config

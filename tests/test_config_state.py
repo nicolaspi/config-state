@@ -1,3 +1,4 @@
+import json
 import pickle
 from dataclasses import FrozenInstanceError
 from datetime import datetime
@@ -32,6 +33,7 @@ from tests.objects import SubFooWithRef
 from tests.objects import SubFooWithRef2
 from tests.objects import SubFooWithRef3
 from tests.utils import compare_states
+from tests.utils import config_factory
 
 
 def test_config_consistency():
@@ -322,6 +324,28 @@ def test_nested():
   sub3 = Sub3({'param': 'value', 'sub1': {'param': 'sub1_value'}})
   assert sub3.param == 'value'
   assert sub3.sub1.param == 'sub1_value'
+
+
+def test_nested_using_factory(tmpdir):
+  config = {'learning_rate': 0.321, 'license_key': 0}
+
+  obj = NestedFoo({'sub_conf': config, 'license_key': 0})
+  assert obj.sub_conf.learning_rate == 0.321
+
+  config_file = Path(tmpdir) / 'config.json'
+  json.dump(config, open(config_file, 'w'))
+
+  obj = NestedFoo({'sub_conf': str(config_file), 'license_key': 0})
+  assert obj.sub_conf.learning_rate == 0.321
+
+  class LocalNestedFoo(Foo):
+    sub_conf: SubFoo = ConfigField(str(config_file),
+                                   type=SubFoo,
+                                   doc="A ConfigState as config field",
+                                   factory=config_factory)
+
+  obj = LocalNestedFoo({'license_key': 0})
+  assert obj.sub_conf.learning_rate == 0.321
 
 
 def test_deferred():
