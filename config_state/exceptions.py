@@ -9,8 +9,8 @@ def exception_handler(func):
     try:
       func(*args, **kwargs)
     except ConfigError as e:
-      raise e from e
+      raise e
     except Exception as e:
-      raise ConfigError(f"Configuring '{type(self).__name__}': {e}") from e
+      raise ConfigError(f"Configuring '{type(self).__name__}'") from e
 
   return wrapped
