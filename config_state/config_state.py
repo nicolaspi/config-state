@@ -23,7 +23,8 @@ class StateProperty(property):
   variable as a property.
   """
 
-  if not hasattr(inspect, 'getmembers_static'): # For python < 3.11
+  if not hasattr(inspect, 'getmembers_static'):  # For python < 3.11
+
     def __get__(self, obj, objtype=None):
       if obj is None or '___props_initialized___' in objtype.__dict__:
         return super().__get__(obj, objtype)
@@ -87,8 +88,9 @@ class _MetaConfigState(ABCMeta):
 
   @staticmethod
   def _get_attr_type(cls, type, item_func=lambda k, v: (k, v)):
-    if hasattr(inspect, 'getmembers_static'): # For python >= 3.11
-      attrs = inspect.getmembers_static(cls, predicate=lambda m: isinstance(m, type))
+    if hasattr(inspect, 'getmembers_static'):  # For python >= 3.11
+      attrs = inspect.getmembers_static(cls,
+                                        predicate=lambda m: isinstance(m, type))
     else:
       attrs = inspect.getmembers(cls, predicate=lambda m: isinstance(m, type))
     return [item_func(k, v) for k, v in attrs]

@@ -73,13 +73,15 @@ def test_config_consistency():
 def test_dynamic_code_not_run():
 
   class PropFoo(ConfigState):
+
     def __init__(self, config):
       super().__init__(config)
       self._param = 0
 
     @stateproperty
     def param(self):
-      assert '___props_initialized___' in type(self).__dict__, "This code should not run uppon class initialization"
+      assert '___props_initialized___' in type(
+          self).__dict__, "This code should not run uppon class initialization"
       return self._param
 
     @param.setter
@@ -529,10 +531,7 @@ def test_references():
   assert foo.alias_param == foo.param
   assert foo.alias_param == 1
 
-  foo = SubFooWithAliasRef({
-      'param': 0,
-      'alias_param_ref': '12345'
-  })
+  foo = SubFooWithAliasRef({'param': 0, 'alias_param_ref': '12345'})
   assert foo.alias_param == foo.param
   assert foo.alias_param == 0
 
