@@ -150,9 +150,11 @@ class SubFooWithMultiRef(ConfigState):
 
 
 class SubFooWithAliasRef(SubFooWithRef):
+  param = ConfigField(type=int)
   alias_param_ref = reference(
       ['nested_foo.license_key', 'nested_foo2.license_key'])
   alias_date_ref = reference('date_ref')
+  alias_param = reference('param')
 
 
 class SubFooWithAliasRef2(SubFooWithRef):

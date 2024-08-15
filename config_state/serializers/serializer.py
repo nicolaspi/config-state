@@ -52,7 +52,6 @@ class Serializer(ConfigState):
     """
     Serializes `object` into `stream`
     """
-    object.check_validity()
     state: ObjectState = object.get_state()
     if isinstance(file, (Path, str)):
       mode = 'wb' if self.is_binary else 'w'

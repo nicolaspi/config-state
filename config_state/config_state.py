@@ -23,6 +23,12 @@ class StateProperty(property):
   variable as a property.
   """
 
+  if not hasattr(inspect, 'getmembers_static'): # For python < 3.11
+    def __get__(self, obj, objtype=None):
+      if obj is None or '___props_initialized___' in objtype.__dict__:
+        return super().__get__(obj, objtype)
+      return None
+
   def __getstate__(self):
     return self.fget, self.fset
 
@@ -81,7 +87,10 @@ class _MetaConfigState(ABCMeta):
 
   @staticmethod
   def _get_attr_type(cls, type, item_func=lambda k, v: (k, v)):
-    attrs = inspect.getmembers(cls, predicate=lambda m: isinstance(m, type))
+    if hasattr(inspect, 'getmembers_static'): # For python >= 3.11
+      attrs = inspect.getmembers_static(cls, predicate=lambda m: isinstance(m, type))
+    else:
+      attrs = inspect.getmembers(cls, predicate=lambda m: isinstance(m, type))
     return [item_func(k, v) for k, v in attrs]
 
   @staticmethod
@@ -773,7 +782,15 @@ class _ReferenceContext(object):
         _ReferenceContext.references_to_init.add(path_id)
         if k in config:
           conf_item = config[k]
-          _ReferenceContext.populate_ref_dict(_references, path_id, conf_item)
+          if len(path) == 1 and path[0] not in config:
+            # In the case where both the reference and the referee
+            # are specified - it might happen after deserialization
+            # or if the user has set both fields - then we prioritize
+            # the referee.
+            config[path[0]] = conf_item
+            del config[k]
+          else:
+            _ReferenceContext.populate_ref_dict(_references, path_id, conf_item)
 
   @staticmethod
   def populate_ref_dict(ref_dict, id_path, conf_item):
@@ -804,6 +821,11 @@ class _ReferenceContext(object):
 
     for k, (_, path) in self._references.items():
       attr = self._config_state
+      # check for shallow path
+      if len(path) == 1:
+        if path[0] in self._config:
+          self.update_config(k, self._config[path[0]])
+          continue
       for key in path:
         attr = getattr(attr, key)
       self.update_config(k, attr)
@@ -1055,7 +1077,6 @@ class ConfigState(metaclass=_MetaConfigState):
     return instance
 
   def __getstate__(self) -> ObjectState:
-    self.check_validity()
     conf_fields = dict([(k, v.__getstate__())
                         for k, v in self._config_fields.items()
                         if not v._static_])
@@ -1081,7 +1102,7 @@ class ConfigState(metaclass=_MetaConfigState):
       for k, v in state.config.items():
         config[k] = v.value
       self.__init__(config)
-    self.check_validity()
+
     if not isinstance(self, state.type):
       raise TypeError(
           f"Error setting state of type {state.type} to instance of "
