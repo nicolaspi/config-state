@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="config-state",
-    version="1.0.1",
+    version="1.0.2",
     author="Nicolas Pinchaud",
     author_email="nicolas.pinchaud@gmail.com",
     description="config-state is a Python module for implementing classes with "
