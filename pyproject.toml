@@ -1,0 +1,29 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "config-state"
+version = "1.0.2"
+authors = [
+    { name = "Nicolas Pinchaud", email = "nicolas.pinchaud@gmail.com" },
+]
+description = """
+config-state is a Python module that helps implement classes using the ConfigState pattern.
+This pattern enhances classes by:
+  1.Adding structured configuration management
+  2.Providing state handling capabilities
+  3.Enabling object creation from configuration files
+  4.Offering fine-grained control over how objects are serialized and deserialized"""
+readme = "README.md"
+requires-python = ">=3.7"
+dependencies = [
+    "pyyaml",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+
+[tool.setuptools.packages.find]
+exclude = ["tests", "examples"]

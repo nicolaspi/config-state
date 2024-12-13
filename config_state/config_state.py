@@ -1167,8 +1167,8 @@ class ConfigState(metaclass=_MetaConfigState):
 
     def get_nested_config(object: Any):
       if isinstance(object, ConfigState):
-        config = dict([(k, get_nested_config(getattr(object, k)))
-                       for k in object._config_fields.keys()])
+        config = dict([(k, get_nested_config(v._value_))
+                       for k, v in object._config_fields.items()])
         return config
       else:
         return str(object)
